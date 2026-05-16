@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" width="200" height="120">
+  <style>
+    text { font-family: Georgia, serif; font-weight: bold; fill: black; }
+    .title { font-size: 48px; letter-spacing: 2px; }
+    .registered { font-size: 24px; }
+  </style>
+  <text x="10" y="70" class="title">ZOE</text>
+  <text x="165" y="50" class="registered">®</text>
+  <text x="10" y="110" class="title">DEPT.</text>
+</svg>
