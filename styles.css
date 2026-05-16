@@ -146,6 +146,11 @@ a {
     transition: background .25s ease, color .25s ease, transform .25s ease;
 }
 
+/* Par défaut cacher le lien login (sera affiché dans le menu mobile) */
+.login-link {
+    display: none;
+}
+
 .nav-links a:hover,
 .nav-links summary:hover,
 .nav-links a.active,
@@ -768,8 +773,21 @@ p {
         background: rgba(255, 255, 255, .74);
     }
 
+    /* Afficher le lien connexion uniquement dans le menu mobile */
+    .login-link {
+        display: block;
+        justify-self: stretch;
+        margin-top: 8px;
+        text-align: center;
+    }
+
     .nav-actions {
         justify-content: center;
+    }
+
+    /* Masquer l'icône utilisateur en version mobile (sera disponible dans le menu) */
+    .nav-action.icon-user {
+        display: none;
     }
 
     .dropdown-menu,

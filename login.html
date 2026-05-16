@@ -24,7 +24,7 @@
         </nav>
 
         <a class="brand" href="index.html" aria-label="Akèy ZOE DEPT.">
-            <span>ZOE DEPT.</span>
+            <img src="img/zoe_logo.svg" alt="ZOE DEPT.">
         </a>
 
         <div class="nav-actions" aria-label="Aksyon">
@@ -73,22 +73,11 @@
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-                if (error) {
-                    alert('Erè koneksyon: ' + error.message);
-                    return;
-                }
-
-                // Redirekte oswa fè aksyon apre koneksyon
-                window.location.href = 'account.html';
-            } catch (err) {
-                alert('Erè: ' + err.message);
+            
+            const { error } = await window.supabaseHelpers.signInUser(email, password);
+            
+            if (error) {
+                alert('Erè: ' + error.message);
             }
         });
     </script>

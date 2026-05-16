@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | ZOE DEPT.</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <input class="nav-toggle-checkbox" type="checkbox" id="nav-toggle" aria-label="Ouvri meni a">
+        <label class="hamburger" for="nav-toggle" aria-label="Ouvri meni a"><span></span></label>
+
+        <nav class="nav-links" aria-label="Navigasyon prensipal">
+            <a class="nav-direct" href="index.html">Akèy</a>
+            <a class="nav-direct" href="account.html">Kont</a>
+        </nav>
+
+        <a class="brand" href="index.html" aria-label="Akèy ZOE DEPT.">
+            <img src="img/zoe_logo.svg" alt="ZOE DEPT.">
+        </a>
+
+        <div class="nav-actions" aria-label="Aksyon">
+            <button class="nav-action icon-search" type="button" aria-label="Rechèch"></button>
+            <button class="nav-action icon-cart" type="button" aria-label="Panye"></button>
+        </div>
+    </header>
+
+    <main class="account-page">
+        <section class="account-container">
+            <div class="account-header">
+                <h1>Panel Admin</h1>
+                <button id="adminLogout" class="btn light">Sòti Admin</button>
+            </div>
+
+            <div class="account-content">
+                <section class="account-section">
+                    <h2>Actions Admin</h2>
+                    <div class="account-details">
+                        <p>Bienvenu, vous êtes dans l'espace administrateur.</p>
+                        <p>Ajoutez ici les contrôles d'administration que vous souhaitez.</p>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <strong>ZOE DEPT.</strong>
+        <span>Listwa on Peyi, Fyète on Pèp.</span>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script>
+        async function checkAdminAccess() {
+            // Accept access if localStorage flag is set OR signed-in user email matches ADMIN_EMAIL
+            const allowFlag = localStorage.getItem('adminAccess') === '1';
+            const ADMIN_EMAIL = window.supabaseHelpers?.ADMIN_EMAIL;
+
+            if (allowFlag) return;
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const userEmail = session?.user?.email;
+                if (userEmail && ADMIN_EMAIL && userEmail === ADMIN_EMAIL) return;
+            } catch (e) {}
+
+            // Sinon redirige vers la page de connexion
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('adminLogout').addEventListener('click', async () => {
+            try { localStorage.removeItem('adminAccess'); } catch(e){}
+            const { error } = await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        });
+
+        checkAdminAccess();
+    </script>
+</body>
+</html>
