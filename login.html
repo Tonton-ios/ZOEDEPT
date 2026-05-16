@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koneksyon | ZOE DEPT.</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <input class="nav-toggle-checkbox" type="checkbox" id="nav-toggle" aria-label="Ouvri meni a">
+        <label class="hamburger" for="nav-toggle" aria-label="Ouvri meni a"><span></span></label>
+
+        <nav class="nav-links" aria-label="Navigasyon prensipal">
+            <details class="nav-menu">
+                <summary>Atelye</summary>
+                <div class="dropdown-menu">
+                    <a href="fek-paret.html">Fèk Parèt</a>
+                    <a href="tout-net.html">Tout Nèt</a>
+                    <a href="mayo.html">Mayo</a>
+                </div>
+            </details>
+            <a class="nav-direct" href="boutik.html">Boutik</a>
+        </nav>
+
+        <a class="brand" href="index.html" aria-label="Akèy ZOE DEPT.">
+            <span>ZOE DEPT.</span>
+        </a>
+
+        <div class="nav-actions" aria-label="Aksyon">
+            <button class="nav-action icon-search" type="button" aria-label="Rechèch"></button>
+            <button class="nav-action icon-cart" type="button" aria-label="Panye"></button>
+        </div>
+    </header>
+
+    <main class="auth-page">
+        <section class="auth-container">
+            <div class="auth-box">
+                <h1>Koneksyon</h1>
+                <p class="auth-subtitle">Si ou gen yon kont ak nou, tanpri konekte.</p>
+
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="email">Adrès imèl</label>
+                        <input type="email" id="email" name="email" required aria-label="Adrès imèl">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Modpas</label>
+                        <input type="password" id="password" name="password" required aria-label="Modpas">
+                    </div>
+
+                    <button type="submit" class="btn dark btn-full">KONEKTE</button>
+                </form>
+
+                <div class="auth-links">
+                    <p>Ou pa gen yon kont? <a href="signup.html">Kreye yon kont</a></p>
+                    <p><a href="#forgot-password" class="forgot-link">Ou bliye modpas ou?</a></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <strong>ZOE DEPT.</strong>
+        <span>Listwa on Peyi, Fyète on Pèp.</span>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    alert('Erè koneksyon: ' + error.message);
+                    return;
+                }
+
+                // Redirekte oswa fè aksyon apre koneksyon
+                window.location.href = 'account.html';
+            } catch (err) {
+                alert('Erè: ' + err.message);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kont Mwen | ZOE DEPT.</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <input class="nav-toggle-checkbox" type="checkbox" id="nav-toggle" aria-label="Ouvri meni a">
+        <label class="hamburger" for="nav-toggle" aria-label="Ouvri meni a"><span></span></label>
+
+        <nav class="nav-links" aria-label="Navigasyon prensipal">
+            <details class="nav-menu">
+                <summary>Atelye</summary>
+                <div class="dropdown-menu">
+                    <a href="fek-paret.html">Fèk Parèt</a>
+                    <a href="tout-net.html">Tout Nèt</a>
+                    <a href="mayo.html">Mayo</a>
+                </div>
+            </details>
+            <a class="nav-direct" href="boutik.html">Boutik</a>
+        </nav>
+
+        <a class="brand" href="index.html" aria-label="Akèy ZOE DEPT.">
+            <span>ZOE DEPT.</span>
+        </a>
+
+        <div class="nav-actions" aria-label="Aksyon">
+            <button class="nav-action icon-search" type="button" aria-label="Rechèch"></button>
+            <button class="nav-action icon-cart" type="button" aria-label="Panye"></button>
+        </div>
+    </header>
+
+    <main class="account-page">
+        <section class="account-container">
+            <div class="account-header">
+                <h1>Kont Mwen</h1>
+                <button id="logoutBtn" class="btn light">Fèmen sesyon</button>
+            </div>
+
+            <div class="account-content">
+                <!-- Istwa Kòmand -->
+                <section class="account-section">
+                    <h2>Istwa Kòmand</h2>
+                    <div id="orderHistory" class="order-history">
+                        <p>Ou pa fè okenn kòmand ankò.</p>
+                    </div>
+                </section>
+
+                <!-- Detay Kont -->
+                <section class="account-section">
+                    <h2>Detay Kont</h2>
+                    <div class="account-details">
+                        <p><strong>Non:</strong> <span id="fullName">-</span></p>
+                        <p><strong>Imèl:</strong> <span id="userEmail">-</span></p>
+                    </div>
+                </section>
+
+                <!-- Adrès Defò -->
+                <section class="account-section">
+                    <h2>Adrès Defò</h2>
+                    <div id="defaultAddress" class="default-address">
+                        <p>-, Ayiti</p>
+                    </div>
+                    <a href="#addresses" class="btn dark">Wè adrès (1)</a>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <strong>ZOE DEPT.</strong>
+        <span>Listwa on Peyi, Fyète on Pèp.</span>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script>
+        // Verifye si itilizatè a konekte
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Afiche enfòmasyon itilizatè a
+            const user = session.user;
+            const metadata = user.user_metadata || {};
+            
+            document.getElementById('fullName').textContent = 
+                (metadata.first_name || '') + ' ' + (metadata.last_name || '');
+            document.getElementById('userEmail').textContent = user.email;
+        }
+
+        // Fèmen sesyon
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                alert('Erè fèmti sesyon: ' + error.message);
+                return;
+            }
+            window.location.href = 'index.html';
+        });
+
+        // Tcheke otentifikasyon sou chaj
+        checkAuth();
+
+        // Swiv chanjman sesyon
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (!session && event === 'SIGNED_OUT') {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>
