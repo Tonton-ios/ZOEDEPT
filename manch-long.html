@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="ht">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +11,7 @@
         <input class="nav-toggle-checkbox" type="checkbox" id="nav-toggle" aria-label="Ouvrir le menu">
         <label class="hamburger" for="nav-toggle" aria-label="Ouvrir le menu"><span></span></label>
 
-        <nav class="nav-links" aria-label="Navigation principale">
+        <nav class="nav-links" aria-label="Navigasyon prensipal">
             <details class="nav-menu">
                 <summary class="active">Atelye</summary>
                 <div class="dropdown-menu">
@@ -59,13 +59,13 @@
             <a class="nav-direct" href="boutik.html">Boutik</a>
         </nav>
 
-        <a class="brand" href="index.html" aria-label="Accueil ZOE DEPT.">
+        <a class="brand" href="index.html" aria-label="Akèy ZOE DEPT.">
             <img src="img/zoe_logo.svg" alt="ZOE DEPT.">
         </a>
 
         <div class="nav-actions" aria-label="Actions">
-            <button class="nav-action icon-search" type="button" aria-label="Recherche"></button>
-            <button class="nav-action icon-cart" type="button" aria-label="Panier"></button>
+            <button class="nav-action icon-search" type="button" aria-label="Rechèch"></button>
+            <button class="nav-action icon-cart" type="button" aria-label="Panye"></button>
             <a class="nav-action icon-user" href="login.html" aria-label="Koneksyon"></a>
         </div>
     </header>
@@ -75,19 +75,20 @@
             <div class="section-title">
                 <p class="eyebrow">Atelye</p>
                 <h1>Manch Long</h1>
-                <p>Chemiz a manches longues.</p>
+                <p>Chemiz manch long.</p>
             </div>
-            <div class="about-panel">
-                <h2>Manch Long</h2>
-                <p>Une categorie pour les chemises longues, propres et polyvalentes.</p>
-                <a class="btn dark" href="boutik.html">Voir la boutik</a>
+            <div class="dynamic-category-products" data-dynamic-category="manch-long">
+                <div class="empty-products">Ap chaje pwodwi yo...</div>
             </div>
         </section>
     </main>
 
     <footer class="footer">
         <strong>ZOE DEPT.</strong>
-        <span>Haitian pride. Luxury essentials. Built for the lineage.</span>
+        <span>© 2026 ZOE DEPT, Tout dwa rezève. Sit sa fèt pa URBVEC ATELIER .</span>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script src="shop-products.js"></script>
 </body>
 </html>

@@ -36,12 +36,12 @@ Dans Supabase SQL Editor, créez:
 
 #### Table: users_profiles
 ```sql
-CREATE TABLE users_profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id),
+CREATE TABLE IF NOT EXISTS users_profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   first_name TEXT,
   last_name TEXT,
   email TEXT UNIQUE,
-  created_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
@@ -62,11 +62,178 @@ CREATE TABLE user_addresses (
 ```sql
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id),
+  user_id UUID REFERENCES auth.users(id),
+  customer_email TEXT,
+  customer_phone TEXT,
+  customer_first_name TEXT,
+  customer_last_name TEXT,
+  customer_address TEXT,
+  customer_country TEXT DEFAULT 'Haiti',
+  payment_method TEXT,
+  items JSONB DEFAULT '[]'::jsonb,
+  subtotal_htg DECIMAL(10, 2),
+  shipping_htg DECIMAL(10, 2) DEFAULT 0,
+  discount_htg DECIMAL(10, 2) DEFAULT 0,
+  total_htg DECIMAL(10, 2),
+  promo_code TEXT,
   total DECIMAL(10, 2),
   status TEXT DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+```
+
+Si `orders` existe deja:
+
+```sql
+ALTER TABLE orders
+ALTER COLUMN user_id DROP NOT NULL,
+ADD COLUMN IF NOT EXISTS customer_email TEXT,
+ADD COLUMN IF NOT EXISTS customer_phone TEXT,
+ADD COLUMN IF NOT EXISTS customer_first_name TEXT,
+ADD COLUMN IF NOT EXISTS customer_last_name TEXT,
+ADD COLUMN IF NOT EXISTS customer_address TEXT,
+ADD COLUMN IF NOT EXISTS customer_country TEXT DEFAULT 'Haiti',
+ADD COLUMN IF NOT EXISTS payment_method TEXT,
+ADD COLUMN IF NOT EXISTS items JSONB DEFAULT '[]'::jsonb,
+ADD COLUMN IF NOT EXISTS subtotal_htg DECIMAL(10, 2),
+ADD COLUMN IF NOT EXISTS shipping_htg DECIMAL(10, 2) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS discount_htg DECIMAL(10, 2) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS total_htg DECIMAL(10, 2),
+ADD COLUMN IF NOT EXISTS promo_code TEXT;
+```
+
+#### Table: products
+Si votre table `products` existe deja, ajoutez ces colonnes pour profiter de toutes les options admin:
+
+```sql
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS categories TEXT[] DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS color_variants JSONB DEFAULT '[]'::jsonb,
+ADD COLUMN IF NOT EXISTS sku TEXT,
+ADD COLUMN IF NOT EXISTS slug TEXT,
+ADD COLUMN IF NOT EXISTS collection TEXT,
+ADD COLUMN IF NOT EXISTS product_type TEXT,
+ADD COLUMN IF NOT EXISTS gender TEXT,
+ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS material TEXT,
+ADD COLUMN IF NOT EXISTS fit TEXT,
+ADD COLUMN IF NOT EXISTS care TEXT,
+ADD COLUMN IF NOT EXISTS stock_qty INTEGER,
+ADD COLUMN IF NOT EXISTS compare_at_usd DECIMAL(10, 2),
+ADD COLUMN IF NOT EXISTS is_latest BOOLEAN DEFAULT TRUE,
+ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS is_preorder BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS preorder_ready_at DATE,
+ADD COLUMN IF NOT EXISTS preorder_note TEXT;
+```
+
+#### Table: preorders
+Pour recevoir les demandes de pre commande dans le panel admin:
+
+```sql
+CREATE TABLE IF NOT EXISTS preorders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id UUID,
+  product_name TEXT,
+  product_image_url TEXT,
+  selected_size TEXT,
+  selected_color TEXT,
+  customer_email TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  customer_address TEXT NOT NULL,
+  price_usd DECIMAL(10, 2),
+  status TEXT DEFAULT 'preorder',
+  preorder_ready_at DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+Si `preorders` existe deja, ajoutez simplement la colonne size:
+
+```sql
+ALTER TABLE preorders
+ADD COLUMN IF NOT EXISTS selected_size TEXT,
+ADD COLUMN IF NOT EXISTS selected_color TEXT;
+```
+
+#### Table: promo_codes
+Pour creer des rabais depuis le panel admin:
+
+```sql
+CREATE TABLE IF NOT EXISTS promo_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT UNIQUE NOT NULL,
+  discount_percent INTEGER NOT NULL,
+  usage_limit INTEGER,
+  used_count INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+Si RLS est active sur `preorders`, ajoutez au minimum une policy pour permettre aux visiteurs de creer une pre commande:
+
+```sql
+ALTER TABLE preorders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE promo_codes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Visitors can create preorders"
+ON preorders
+FOR INSERT
+TO anon, authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Users can read their own preorders"
+ON preorders
+FOR SELECT
+TO authenticated
+USING (customer_email = auth.jwt() ->> 'email');
+
+CREATE POLICY "Admin can read all preorders"
+ON preorders
+FOR SELECT
+TO authenticated
+USING (auth.jwt() ->> 'email' = 'zoedept2026@gmail.com');
+
+CREATE POLICY "Visitors can create orders"
+ON orders
+FOR INSERT
+TO anon, authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Users can read their own orders"
+ON orders
+FOR SELECT
+TO authenticated
+USING (customer_email = auth.jwt() ->> 'email' OR user_id = auth.uid());
+
+CREATE POLICY "Admin can manage all orders"
+ON orders
+FOR ALL
+TO authenticated
+USING (auth.jwt() ->> 'email' = 'zoedept2026@gmail.com')
+WITH CHECK (auth.jwt() ->> 'email' = 'zoedept2026@gmail.com');
+
+CREATE POLICY "Visitors can read active promo codes"
+ON promo_codes
+FOR SELECT
+TO anon, authenticated
+USING (is_active = true);
+
+CREATE POLICY "Visitors can update promo usage"
+ON promo_codes
+FOR UPDATE
+TO anon, authenticated
+USING (is_active = true)
+WITH CHECK (is_active = true);
+
+CREATE POLICY "Admin can manage promo codes"
+ON promo_codes
+FOR ALL
+TO authenticated
+USING (auth.jwt() ->> 'email' = 'zoedept2026@gmail.com')
+WITH CHECK (auth.jwt() ->> 'email' = 'zoedept2026@gmail.com');
 ```
 
 ### Étape 6 : Configurer les politiques RLS (Row Level Security)

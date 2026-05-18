@@ -72,12 +72,19 @@
 
     <footer class="footer">
         <strong>ZOE DEPT.</strong>
-        <span>Listwa on Peyi, Fyète on Pèp.</span>
+        <span>© 2026 ZOE DEPT, Tout dwa rezève. Sit sa fèt pa URBVEC ATELIER .</span>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
     <script>
+        const signupParams = new URLSearchParams(window.location.search);
+        const preorderLead = JSON.parse(localStorage.getItem('zoePreorderLead') || '{}');
+
+        if (signupParams.get('email') || preorderLead.customer_email) {
+            document.getElementById('email').value = signupParams.get('email') || preorderLead.customer_email;
+        }
+
         document.getElementById('signupForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const firstName = document.getElementById('firstName').value;
@@ -86,13 +93,15 @@
             const password = document.getElementById('password').value;
 
             try {
-                const { data, error } = await supabase.auth.signUp({
+                const { data, error } = await window.supabaseHelpers.supabase.auth.signUp({
                     email: email,
                     password: password,
                     options: {
                         data: {
                             first_name: firstName,
-                            last_name: lastName
+                            last_name: lastName,
+                            preorder_phone: preorderLead.customer_phone || '',
+                            preorder_address: preorderLead.customer_address || ''
                         }
                     }
                 });
@@ -102,8 +111,8 @@
                     return;
                 }
 
-                alert('Kont ou kreye ak siksè! Tanpri verifye imèl ou pou konfime.');
-                window.location.href = 'login.html';
+                alert('Kont ou kreye ak siksè! Tanpri verifye imèl ou si Supabase mande sa.');
+                window.location.href = signupParams.get('preorder') ? 'account.html?preorder=1' : 'login.html';
             } catch (err) {
                 alert('Erè: ' + err.message);
             }

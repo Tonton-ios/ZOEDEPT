@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="ht">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZOE DEPT. | Home</title>
+    <title>ZOE DEPT. | Akèy</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header class="navbar home-header">
-        <input class="nav-toggle-checkbox" type="checkbox" id="nav-toggle" aria-label="Ouvrir le menu">
-        <label class="hamburger" for="nav-toggle" aria-label="Ouvrir le menu"><span></span></label>
+        <input class="nav-toggle-checkbox" type="checkbox" id="nav-toggle" aria-label="Ouvri meni a">
+        <label class="hamburger" for="nav-toggle" aria-label="Ouvri meni a"><span></span></label>
 
-        <nav class="nav-links" aria-label="Navigation principale">
+        <nav class="nav-links" aria-label="Navigasyon prensipal">
             <details class="nav-menu">
                 <summary class="active">Atelye</summary>
                 <div class="dropdown-menu">
@@ -60,13 +60,15 @@
             <a class="nav-direct login-link" href="login.html">Konekte</a>
         </nav>
 
-        <a class="brand" href="index.html" aria-label="Accueil ZOE DEPT.">
+        <a class="brand" href="index.html" aria-label="Akèy ZOE DEPT.">
             <img src="img/zoe_logo.svg" alt="ZOE DEPT.">
         </a>
 
         <div class="nav-actions" aria-label="Actions">
-            <button class="nav-action icon-search" type="button" aria-label="Recherche"></button>
-            <button class="nav-action icon-cart" type="button" aria-label="Panier"></button>
+            <button class="nav-action icon-search" type="button" aria-label="Rechèch"></button>
+            <a class="nav-action icon-cart" href="panye.html" aria-label="Panye">
+                <span class="cart-badge">0</span>
+            </a>
             <a class="nav-action icon-user" href="login.html" aria-label="Koneksyon"></a>
         </div>
     </header>
@@ -81,31 +83,46 @@
             </div>
         </section>
 
-        <!-- Bandeau d'images défilant -->
+        <!-- Imaj pwodwi kap defile -->
         <section class="marquee-container" aria-hidden="true">
-            <div class="marquee-track">
-                <!-- Première série de 6 images (Produits du site) -->
-                <div class="marquee-item tshirt-image"></div>
-                <div class="marquee-item cap-image"></div>
-                <div class="marquee-item other-image"></div>
-                <div class="marquee-item tshirt-image"></div>
-                <div class="marquee-item cap-image"></div>
-                <div class="marquee-item other-image"></div>
-                
-                <!-- Copie identique pour créer l'effet de boucle infinie (Produits du site) -->
-                <div class="marquee-item tshirt-image"></div>
-                <div class="marquee-item cap-image"></div>
-                <div class="marquee-item other-image"></div>
-                <div class="marquee-item tshirt-image"></div>
-                <div class="marquee-item cap-image"></div>
-                <div class="marquee-item other-image"></div>
+            <div class="marquee-track" id="dynamicMarquee">
+                <!-- Imaj yo ap parèt la -->
             </div>
         </section>
     </main>
 
     <footer class="footer">
         <strong>ZOE DEPT.</strong>
-        <span>Listwa on Peyi, Fyète on Pèp.</span>
+        <span>© 2026 ZOE DEPT, Tout dwa rezève. Sit sa fèt pa URBVEC ATELIER .</span>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script>
+        async function loadMarquee() {
+            const track = document.getElementById('dynamicMarquee');
+            
+            const { data: products, error } = await window.supabaseHelpers.supabase
+                .from('products')
+                .select('image_url')
+                .order('created_at', { ascending: false });
+
+            if (error || !products || products.length === 0) return;
+
+            const uniqueProducts = products.filter((prod, index, list) => 
+                prod.image_url && list.findIndex(item => item.image_url === prod.image_url) === index
+            );
+            
+            track.innerHTML = '';
+            uniqueProducts.forEach(prod => {
+                const item = document.createElement('div');
+                item.className = 'marquee-item';
+                item.style.backgroundImage = `url('${prod.image_url}')`;
+                track.appendChild(item);
+            });
+        }
+
+        loadMarquee();
+    </script>
 </body>
 </html>

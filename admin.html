@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="ht">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,13 +7,13 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header class="navbar">
+    <header class="navbar admin-navbar">
         <input class="nav-toggle-checkbox" type="checkbox" id="nav-toggle" aria-label="Ouvri meni a">
         <label class="hamburger" for="nav-toggle" aria-label="Ouvri meni a"><span></span></label>
 
         <nav class="nav-links" aria-label="Navigasyon prensipal">
-            <a class="nav-direct" href="index.html">Akèy</a>
-            <a class="nav-direct" href="account.html">Kont</a>
+            <a class="nav-direct" href="index.html">Wè Sit la</a>
+            <a class="nav-direct active" href="admin.html">Dachbòd</a>
         </nav>
 
         <a class="brand" href="index.html" aria-label="Akèy ZOE DEPT.">
@@ -27,41 +27,339 @@
     </header>
 
     <main class="account-page">
-        <section class="account-container">
-            <div class="account-header">
-                <h1>Panel Admin</h1>
-                <button id="adminLogout" class="btn light">Sòti Admin</button>
+        <section class="admin-dashboard-container">
+            <div class="account-header admin-hero">
+                <div>
+                    <p class="eyebrow">Administrasyon</p>
+                    <h1>Sant Kontwòl ZOE</h1>
+                    <p class="admin-hero-copy">Prepare drops, pwodwi, pri, variant ak estati boutique la depi yon sèl kote.</p>
+                </div>
+                <button id="adminLogout" class="btn light">Dekonekte</button>
             </div>
 
-            <div class="account-content">
-                <section class="account-section">
-                    <h2>Actions Admin</h2>
-                    <div class="account-details">
-                        <p>Bienvenu, vous êtes dans l'espace administrateur.</p>
-                        <p>Ajoutez ici les contrôles d'administration que vous souhaitez.</p>
+            <!-- Stats Cards -->
+            <div class="admin-stats-grid">
+                <div class="stat-card clickable" onclick="showProductsPanel()">
+                    <span class="stat-label">Kantite Pwodwi</span>
+                    <span class="stat-value" id="totalProducts">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Vizit an Dirèk</span>
+                    <span class="stat-value" id="liveViews">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Sante Sèvè a</span>
+                    <span class="stat-value server-good" id="serverStatus">Bon</span>
+                </div>
+                <div class="stat-card clickable" onclick="toggleOrders()">
+                    <span class="stat-label">Kantite Kòmand</span>
+                    <span class="stat-value" id="totalOrders">0</span>
+                </div>
+            </div>
+
+            <div class="admin-ops-strip" aria-label="Aksyon rapid">
+                <a href="fek-paret.html">Fèk Parèt</a>
+                <a href="tout-net.html">Tout Nèt</a>
+                <a href="boutik.html">Boutik</a>
+                <a href="panye.html">Panye</a>
+            </div>
+
+            <div class="admin-main-grid" id="mainDashboard">
+                <!-- Formulaire d'ajout -->
+                <section class="admin-card">
+                    <div class="card-header">
+                        <div>
+                            <span class="admin-kicker">Konstriktè Drop</span>
+                            <h2>Nouvo Pwodwi</h2>
+                        </div>
+                    </div>
+                    <form id="addProductForm" class="auth-form">
+                        <fieldset class="form-block">
+                            <legend>Idantite</legend>
+                            <div class="form-group">
+                                <label for="prodName">Non Pwodwi a</label>
+                                <input type="text" id="prodName" required placeholder="ex: Mayo ZOE v.1">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prodCollection">Koleksyon / Drop</label>
+                                    <input type="text" id="prodCollection" placeholder="ex: Premier Drop 2026">
+                                </div>
+                                <div class="form-group">
+                                    <label for="prodSku">SKU / Kòd</label>
+                                    <input type="text" id="prodSku" placeholder="ex: ZD-MAYO-001">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="prodSlug">Slug paj pwodwi</label>
+                                <input type="text" id="prodSlug" placeholder="mayo-zoe-v1">
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="form-block">
+                            <legend>Imaj Boutique</legend>
+                            <div class="form-row">
+                                <div class="form-group file-drop">
+                                    <label for="prodImageFace">Foto Devan</label>
+                                    <input type="file" id="prodImageFace" accept="image/*" required>
+                                    <span>Upload devan pwodwi a</span>
+                                </div>
+                                <div class="form-group file-drop">
+                                    <label for="prodImageBack">Foto Dèyè</label>
+                                    <input type="file" id="prodImageBack" accept="image/*" required>
+                                    <span>Upload dèyè pwodwi a</span>
+                                </div>
+                            </div>
+                            <div class="image-preview-grid" id="imagePreviewGrid" aria-live="polite"></div>
+                        </fieldset>
+
+                        <fieldset class="form-block">
+                            <legend>Pri ak Stock</legend>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prodPriceHTG">Pri (Goud)</label>
+                                    <input type="number" id="prodPriceHTG" required placeholder="ex: 2500">
+                                </div>
+                                <div class="form-group">
+                                    <label for="prodPriceUSD">Pri (Dola $)</label>
+                                    <input type="number" id="prodPriceUSD" required placeholder="ex: 25">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prodCompareUSD">Ansyen Pri ($)</label>
+                                    <input type="number" id="prodCompareUSD" placeholder="ex: 35">
+                                </div>
+                                <div class="form-group">
+                                    <label for="prodStock">Kantite Stock</label>
+                                    <input type="number" id="prodStock" min="0" placeholder="ex: 12">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="form-block">
+                            <legend>Kategori ak Variant</legend>
+                            <div class="form-group">
+                                <label>Kategori kote pwodwi a dwe parèt</label>
+                                <div class="category-choice-grid">
+                                    <label><input type="checkbox" name="prodCategories" value="fek-paret" checked> Fèk Parèt</label>
+                                    <label><input type="checkbox" name="prodCategories" value="mayo"> Mayo</label>
+                                    <label><input type="checkbox" name="prodCategories" value="bout-pantalon"> Bout Pantalon</label>
+                                    <label><input type="checkbox" name="prodCategories" value="pantalon"> Pantalon Long</label>
+                                    <label><input type="checkbox" name="prodCategories" value="manch-long"> Manch Long</label>
+                                    <label><input type="checkbox" name="prodCategories" value="bout-manch"> Bout Manch</label>
+                                    <label><input type="checkbox" name="prodCategories" value="kepi"> Kepi</label>
+                                    <label><input type="checkbox" name="prodCategories" value="gason"> Gason</label>
+                                    <label><input type="checkbox" name="prodCategories" value="fanm"> Fanm</label>
+                                    <label><input type="checkbox" name="prodCategories" value="nou-2-ka-mete"> Nou 2 Ka Mete</label>
+                                    <label><input type="checkbox" name="prodCategories" value="tablo"> Tablo</label>
+                                    <label><input type="checkbox" name="prodCategories" value="valiz"> Valiz</label>
+                                    <label><input type="checkbox" name="prodCategories" value="galri"> Galri</label>
+                                    <label><input type="checkbox" name="prodCategories" value="zoe-dept"> ZOE DEPT.</label>
+                                    <label><input type="checkbox" name="prodCategories" value="bese-triye"> BESE TRIYE</label>
+                                    <label><input type="checkbox" name="prodCategories" value="pv-dept"> PV DEPT</label>
+                                </div>
+                                <small class="field-help">Tout pwodwi parèt nan Tout Nèt otomatikman. Ou ka chwazi 2 kategori oswa plis.</small>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prodGender">Audience</label>
+                                    <select id="prodGender">
+                                        <option value="unisex">Unisex</option>
+                                        <option value="men">Gason</option>
+                                        <option value="women">Fanm</option>
+                                        <option value="art">Art / Objè</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="prodType">Tip Pwodwi</label>
+                                    <input type="text" id="prodType" placeholder="ex: Tee, Hoodie, Denim, Cap">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prodSizes">Size ki disponib</label>
+                                    <input type="text" id="prodSizes" placeholder="XS, S, M, L, XL, XXL">
+                                </div>
+                                <div class="form-group">
+                                    <label for="prodTags">Tags merchandising</label>
+                                    <input type="text" id="prodTags" placeholder="latest, limited, hand-finished">
+                                </div>
+                            </div>
+                            <input type="hidden" id="prodColors">
+                            <div class="variant-builder">
+                                <div class="card-header">
+                                    <div>
+                                        <span class="admin-kicker">Variant Koulè</span>
+                                        <h3>Koulè ak imaj</h3>
+                                    </div>
+                                    <button type="button" class="btn light btn-compact" id="addColorVariant">Ajoute koulè</button>
+                                </div>
+                                <div class="variant-list" id="colorVariantList"></div>
+                                <small class="field-help">Lè kliyan an tape sou yon koulè, imaj pwodwi a chanje sou boutique la.</small>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="form-block">
+                            <legend>Detay Atelye</legend>
+                            <div class="form-group">
+                                <label for="prodDesc">Deskripsyon</label>
+                                <textarea id="prodDesc" rows="4" placeholder="Ekri istwa, vibe, ak detay pwodwi a..."></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prodMaterial">Materyèl</label>
+                                    <input type="text" id="prodMaterial" placeholder="ex: 100% koton lou">
+                                </div>
+                                <div class="form-group">
+                                    <label for="prodFit">Koupe / Fit</label>
+                                    <input type="text" id="prodFit" placeholder="ex: Oversized, regular, cropped">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="prodCare">Antretyen</label>
+                                <textarea id="prodCare" rows="2" placeholder="ex: Lave frèt, pa mete nan sechwa"></textarea>
+                            </div>
+                        </fieldset>
+
+                        <div class="publish-panel">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="isAvailable" checked>
+                                <label for="isAvailable">Disponib nan stòk</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="isPreorder">
+                                <label for="isPreorder">Aktive Pre Komand</label>
+                            </div>
+                            <div class="preorder-admin-fields" id="preorderAdminFields">
+                                <div class="form-group">
+                                    <label for="preorderReadyAt">Kilè drop la ap pare?</label>
+                                    <input type="date" id="preorderReadyAt">
+                                </div>
+                                <div class="form-group">
+                                    <label for="preorderNote">Mesaj pou kliyan an</label>
+                                    <textarea id="preorderNote" rows="2" placeholder="ex: Drop sa ap pare nan fen mwa a."></textarea>
+                                </div>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="isLatest" checked>
+                                <label for="isLatest">Mete nan Fèk Parèt</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="isFeatured">
+                                <label for="isFeatured">Mete devan sou akèy la</label>
+                            </div>
+                            <button type="submit" id="submitBtn" class="btn dark btn-full">Pibliye Pwodwi a</button>
+                            <button type="button" id="cancelEditBtn" class="btn light btn-full hidden">Anile modifikasyon</button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Liste des produits existants -->
+                <section class="admin-card">
+                    <div class="card-header">
+                        <div>
+                            <span class="admin-kicker">Envantè</span>
+                            <h2>Envantè Pwodwi</h2>
+                        </div>
+                        <button class="btn-refresh" onclick="loadAdminData()" title="Rafrechi" aria-label="Rafrechi">↻</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Pwodwi</th>
+                                    <th>Kategori</th>
+                                    <th>Pri</th>
+                                    <th>Estati</th>
+                                    <th>Aksyon</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsList">
+                                <!-- Rempli par JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </section>
             </div>
+
+            <section class="admin-card">
+                <div class="card-header">
+                    <div>
+                        <span class="admin-kicker">Rabè</span>
+                        <h2>Kòd Promo</h2>
+                    </div>
+                </div>
+                <form id="promoForm" class="auth-form promo-admin-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="promoCode">Kòd</label>
+                            <input type="text" id="promoCode" placeholder="ex: ZOE10" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="promoPercent">Rabè (%)</label>
+                            <input type="number" id="promoPercent" min="1" max="90" placeholder="10" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="promoLimit">Kantite fwa li ka sèvi</label>
+                        <input type="number" id="promoLimit" min="1" placeholder="ex: 25">
+                    </div>
+                    <button class="btn dark btn-full" type="submit">Kreye kòd promo</button>
+                </form>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Kòd</th>
+                                <th>Rabè</th>
+                                <th>Itilizasyon</th>
+                                <th>Aksyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="promoList"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Seksyon kòmand yo -->
+            <section id="ordersSection" class="admin-card admin-orders-section hidden">
+                <div class="card-header">
+                    <h2>Lis Kòmand Yo</h2>
+                    <button class="btn light" onclick="toggleOrders()">Retounen</button>
+                </div>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID Kòmand</th>
+                                <th>Kliyan</th>
+                                <th>Total</th>
+                                <th>Estati</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersList"></tbody>
+                    </table>
+                </div>
+            </section>
         </section>
     </main>
 
     <footer class="footer">
         <strong>ZOE DEPT.</strong>
-        <span>Listwa on Peyi, Fyète on Pèp.</span>
+        <span>© 2026 ZOE DEPT, Tout dwa rezève. Sit sa fèt pa URBVEC ATELIER .</span>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
     <script>
         async function checkAdminAccess() {
-            // Accept access if localStorage flag is set OR signed-in user email matches ADMIN_EMAIL
-            const allowFlag = localStorage.getItem('adminAccess') === '1';
-            const ADMIN_EMAIL = window.supabaseHelpers?.ADMIN_EMAIL;
+            const helpers = window.supabaseHelpers;
+            const ADMIN_EMAIL = helpers?.ADMIN_EMAIL;
 
-            if (allowFlag) return;
-
+            // Vérifier la session réelle auprès de Supabase
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { session } } = await window.supabaseHelpers.supabase.auth.getSession();
                 const userEmail = session?.user?.email;
                 if (userEmail && ADMIN_EMAIL && userEmail === ADMIN_EMAIL) return;
             } catch (e) {}
@@ -70,13 +368,574 @@
             window.location.href = 'login.html';
         }
 
+        const optionalProductFields = [
+            'sku',
+            'slug',
+            'collection',
+            'product_type',
+            'gender',
+            'tags',
+            'material',
+            'fit',
+            'care',
+            'stock_qty',
+            'compare_at_usd',
+            'is_latest',
+            'is_featured',
+            'categories',
+            'color_variants',
+            'is_preorder',
+            'preorder_ready_at',
+            'preorder_note'
+        ];
+
+        const categoryLabels = {
+            'fek-paret': 'Fèk Parèt',
+            'tout-net': 'Tout Nèt',
+            'mayo': 'Mayo',
+            'bout-pantalon': 'Bout Pantalon',
+            'pantalon': 'Pantalon Long',
+            'manch-long': 'Manch Long',
+            'bout-manch': 'Bout Manch',
+            'kepi': 'Kepi',
+            'gason': 'Gason',
+            'fanm': 'Fanm',
+            'nou-2-ka-mete': 'Nou 2 Ka Mete',
+            'tablo': 'Tablo',
+            'valiz': 'Valiz',
+            'galri': 'Galri',
+            'zoe-dept': 'ZOE DEPT.',
+            'bese-triye': 'BESE TRIYE',
+            'pv-dept': 'PV DEPT'
+        };
+
+        let adminProductsCache = [];
+        let editingProductId = null;
+
+        function escapeHtml(value = '') {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function splitList(value) {
+            return value.split(',').map(item => item.trim()).filter(Boolean);
+        }
+
+        function getSelectedCategories() {
+            const selected = [...document.querySelectorAll('input[name="prodCategories"]:checked')]
+                .map(input => input.value);
+            return [...new Set(selected)];
+        }
+
+        function getProductCategories(product) {
+            const slugLine = (product.description || '').match(/Kategori Slug:\s*([^\n]+)/i);
+            const parsed = slugLine ? slugLine[1].split(',').map(item => item.trim()).filter(Boolean) : [];
+            const categories = Array.isArray(product.categories) ? product.categories : [];
+            const category = product.category ? [product.category] : [];
+            return [...new Set([...categories, ...category, ...parsed])];
+        }
+
+        function isProductPreorder(product) {
+            if (product.is_preorder) return true;
+            return /Pre Komand:\s*true/i.test(product.description || '');
+        }
+
+        function slugify(value) {
+            return value
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        function formatUsd(value) {
+            if (!value) return '-';
+            return `$${Number(value).toLocaleString('en-US')}`;
+        }
+
+        function showProductsPanel() {
+            document.getElementById('mainDashboard').classList.remove('hidden');
+            document.getElementById('ordersSection').classList.add('hidden');
+            document.getElementById('productsList')?.closest('.admin-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function getColorVariantRows() {
+            return [...document.querySelectorAll('.variant-row')].map(row => ({
+                color: row.querySelector('.variant-color-name')?.value.trim() || '',
+                file: row.querySelector('.variant-color-file')?.files[0] || null
+            })).filter(variant => variant.color);
+        }
+
+        async function uploadColorVariants(existingVariants = []) {
+            const variants = getColorVariantRows();
+            const uploaded = [];
+
+            for (let index = 0; index < variants.length; index++) {
+                const variant = variants[index];
+                const oldVariant = existingVariants[index] || {};
+                const imageUrl = variant.file ? await window.supabaseHelpers.uploadImage(variant.file) : oldVariant.image_url || '';
+                uploaded.push({
+                    color: variant.color,
+                    image_url: imageUrl
+                });
+            }
+
+            return uploaded;
+        }
+
+        function syncColorInput() {
+            document.getElementById('prodColors').value = getColorVariantRows()
+                .map(variant => variant.color)
+                .join(', ');
+        }
+
+        function addColorVariantRow(color = '') {
+            const list = document.getElementById('colorVariantList');
+            const row = document.createElement('div');
+            row.className = 'variant-row';
+            row.innerHTML = `
+                <div class="form-group">
+                    <label>Non koulè</label>
+                    <input class="variant-color-name" type="text" placeholder="ex: Nwa" value="${escapeHtml(color)}">
+                </div>
+                <div class="form-group">
+                    <label>Imaj koulè sa</label>
+                    <input class="variant-color-file" type="file" accept="image/*">
+                </div>
+                <button type="button" class="btn-delete variant-remove">Retire</button>
+            `;
+            list.appendChild(row);
+            row.querySelector('.variant-color-name').addEventListener('input', syncColorInput);
+            row.querySelector('.variant-remove').addEventListener('click', () => {
+                row.remove();
+                syncColorInput();
+            });
+            syncColorInput();
+        }
+
+        function setCategoryChecks(categories = []) {
+            document.querySelectorAll('input[name="prodCategories"]').forEach(input => {
+                input.checked = categories.includes(input.value);
+            });
+        }
+
+        function resetProductForm() {
+            editingProductId = null;
+            const form = document.getElementById('addProductForm');
+            form.reset();
+            document.getElementById('prodSlug').dataset.edited = '';
+            document.getElementById('imagePreviewGrid').innerHTML = '';
+            document.getElementById('colorVariantList').innerHTML = '';
+            document.getElementById('preorderAdminFields').classList.remove('active');
+            document.getElementById('prodImageFace').required = true;
+            document.getElementById('prodImageBack').required = true;
+            document.getElementById('submitBtn').textContent = 'Pibliye Pwodwi a';
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+            addColorVariantRow('Nwa');
+        }
+
+        function editProduct(id) {
+            const product = adminProductsCache.find(item => item.id === id);
+            if (!product) return;
+
+            editingProductId = id;
+            document.getElementById('prodName').value = product.name || '';
+            document.getElementById('prodCollection').value = product.collection || '';
+            document.getElementById('prodSku').value = product.sku || '';
+            document.getElementById('prodSlug').value = product.slug || '';
+            document.getElementById('prodPriceHTG').value = product.price_htg || '';
+            document.getElementById('prodPriceUSD').value = product.price_usd || '';
+            document.getElementById('prodCompareUSD').value = product.compare_at_usd || '';
+            document.getElementById('prodStock').value = product.stock_qty || '';
+            document.getElementById('prodGender').value = product.gender || 'unisex';
+            document.getElementById('prodType').value = product.product_type || '';
+            document.getElementById('prodSizes').value = Array.isArray(product.sizes) ? product.sizes.join(', ') : '';
+            document.getElementById('prodTags').value = Array.isArray(product.tags) ? product.tags.join(', ') : '';
+            document.getElementById('prodDesc').value = (product.description || '').split('--- Detay Atelye ---')[0].trim();
+            document.getElementById('prodMaterial').value = product.material || '';
+            document.getElementById('prodFit').value = product.fit || '';
+            document.getElementById('prodCare').value = product.care || '';
+            document.getElementById('isAvailable').checked = Boolean(product.is_available);
+            document.getElementById('isLatest').checked = Boolean(product.is_latest);
+            document.getElementById('isFeatured').checked = Boolean(product.is_featured);
+            document.getElementById('isPreorder').checked = isProductPreorder(product);
+            document.getElementById('preorderReadyAt').value = product.preorder_ready_at || '';
+            document.getElementById('preorderNote').value = product.preorder_note || '';
+            document.getElementById('preorderAdminFields').classList.toggle('active', isProductPreorder(product));
+            setCategoryChecks(getProductCategories(product));
+
+            document.getElementById('colorVariantList').innerHTML = '';
+            const variants = Array.isArray(product.color_variants) ? product.color_variants : [];
+            if (variants.length) variants.forEach(variant => addColorVariantRow(variant.color || ''));
+            else (product.colors || ['Nwa']).forEach(color => addColorVariantRow(color));
+
+            document.getElementById('prodImageFace').required = false;
+            document.getElementById('prodImageBack').required = false;
+            document.getElementById('submitBtn').textContent = 'Sove modifikasyon';
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            document.getElementById('addProductForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function buildProductDescription(colorVariants = []) {
+            const baseDescription = document.getElementById('prodDesc').value.trim();
+            const details = [
+                ['Koleksyon', document.getElementById('prodCollection').value],
+                ['SKU', document.getElementById('prodSku').value],
+                ['Kategori', getSelectedCategories().map(cat => categoryLabels[cat] || cat).join(', ')],
+                ['Kategori Slug', getSelectedCategories().join(', ')],
+                ['Audience', document.getElementById('prodGender').value],
+                ['Tip', document.getElementById('prodType').value],
+                ['Materyèl', document.getElementById('prodMaterial').value],
+                ['Koupe', document.getElementById('prodFit').value],
+                ['Antretyen', document.getElementById('prodCare').value],
+                ['Koulè', colorVariants.map(variant => variant.color).join(', ')],
+                ['Koulè Imaj', colorVariants.map(variant => `${variant.color}=${variant.image_url}`).join(' | ')],
+                ['Pre Komand', document.getElementById('isPreorder').checked ? 'true' : 'false'],
+                ['Drop Pare', document.getElementById('preorderReadyAt').value],
+                ['Mesaj Pre Komand', document.getElementById('preorderNote').value],
+                ['Tags', document.getElementById('prodTags').value]
+            ].filter(([, value]) => value && value.trim());
+
+            if (!details.length) return baseDescription;
+
+            const detailText = details.map(([label, value]) => `${label}: ${value.trim()}`).join('\n');
+            return `${baseDescription}${baseDescription ? '\n\n' : ''}--- Detay Atelye ---\n${detailText}`;
+        }
+
+        function buildProductPayload(urlFace, urlBack, colorVariants = []) {
+            const name = document.getElementById('prodName').value.trim();
+            const slug = document.getElementById('prodSlug').value.trim() || slugify(name);
+            const categories = getSelectedCategories();
+            const colors = colorVariants.map(variant => variant.color);
+            return {
+                name,
+                image_url: urlFace,
+                back_image_url: urlBack,
+                price_htg: document.getElementById('prodPriceHTG').value,
+                price_usd: document.getElementById('prodPriceUSD').value,
+                description: buildProductDescription(colorVariants),
+                category: categories[0] || 'fek-paret',
+                categories,
+                sizes: splitList(document.getElementById('prodSizes').value),
+                colors,
+                color_variants: colorVariants,
+                is_available: document.getElementById('isAvailable').checked,
+                sku: document.getElementById('prodSku').value.trim(),
+                slug,
+                collection: document.getElementById('prodCollection').value.trim(),
+                product_type: document.getElementById('prodType').value.trim(),
+                gender: document.getElementById('prodGender').value,
+                tags: splitList(document.getElementById('prodTags').value),
+                material: document.getElementById('prodMaterial').value.trim(),
+                fit: document.getElementById('prodFit').value.trim(),
+                care: document.getElementById('prodCare').value.trim(),
+                stock_qty: document.getElementById('prodStock').value || null,
+                compare_at_usd: document.getElementById('prodCompareUSD').value || null,
+                is_latest: document.getElementById('isLatest').checked,
+                is_featured: document.getElementById('isFeatured').checked,
+                is_preorder: document.getElementById('isPreorder').checked,
+                preorder_ready_at: document.getElementById('preorderReadyAt').value || null,
+                preorder_note: document.getElementById('preorderNote').value.trim()
+            };
+        }
+
+        async function saveProduct(payload) {
+            const supabase = window.supabaseHelpers.supabase;
+            let query = editingProductId
+                ? supabase.from('products').update(payload).eq('id', editingProductId)
+                : supabase.from('products').insert([payload]);
+            let { error } = await query;
+
+            if (error && /column|schema cache|Could not find/i.test(error.message || '')) {
+                const compatiblePayload = { ...payload };
+                optionalProductFields.forEach(field => delete compatiblePayload[field]);
+                query = editingProductId
+                    ? supabase.from('products').update(compatiblePayload).eq('id', editingProductId)
+                    : supabase.from('products').insert([compatiblePayload]);
+                ({ error } = await query);
+            }
+
+            return { error };
+        }
+
+        function renderImagePreviews() {
+            const preview = document.getElementById('imagePreviewGrid');
+            const files = [
+                ['Devan', document.getElementById('prodImageFace').files[0]],
+                ['Dèyè', document.getElementById('prodImageBack').files[0]]
+            ].filter(([, file]) => file);
+
+            preview.innerHTML = files.map(([label, file]) => `
+                <figure>
+                    <img src="${URL.createObjectURL(file)}" alt="Aperçu ${label}">
+                    <figcaption>${label}</figcaption>
+                </figure>
+            `).join('');
+        }
+
+        document.getElementById('prodName').addEventListener('input', (event) => {
+            const slugInput = document.getElementById('prodSlug');
+            if (!slugInput.dataset.edited) slugInput.value = slugify(event.target.value);
+        });
+
+        document.getElementById('prodSlug').addEventListener('input', (event) => {
+            event.target.dataset.edited = 'true';
+            event.target.value = slugify(event.target.value);
+        });
+
+        document.getElementById('prodImageFace').addEventListener('change', renderImagePreviews);
+        document.getElementById('prodImageBack').addEventListener('change', renderImagePreviews);
+        document.getElementById('addColorVariant').addEventListener('click', () => addColorVariantRow());
+        document.getElementById('isPreorder').addEventListener('change', (event) => {
+            document.getElementById('preorderAdminFields').classList.toggle('active', event.target.checked);
+        });
+        document.getElementById('cancelEditBtn').addEventListener('click', resetProductForm);
+        addColorVariantRow('Nwa');
+
+        // Fonksyon pou aktive/desaktive vi kòmand yo
+        function toggleOrders() {
+            document.getElementById('mainDashboard').classList.toggle('hidden');
+            document.getElementById('ordersSection').classList.toggle('hidden');
+            if (!document.getElementById('ordersSection').classList.contains('hidden')) {
+                loadOrders();
+            }
+        }
+
+        // Chaje Done Estatistik ak Pwodwi
+        async function loadAdminData() {
+            const supabase = window.supabaseHelpers.supabase;
+
+            // Pwodwi
+            const { data: products } = await supabase
+                .from('products')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            // Kòmand + Pre Komand
+            const { count: orderCount } = await supabase
+                .from('orders')
+                .select('*', { count: 'exact', head: true });
+            const { count: preorderCount } = await supabase
+                .from('preorders')
+                .select('*', { count: 'exact', head: true });
+
+            document.getElementById('totalProducts').textContent = products?.length || 0;
+            document.getElementById('totalOrders').textContent = (orderCount || 0) + (preorderCount || 0);
+            
+            // Similasyon vizit (pou kounye a)
+            document.getElementById('liveViews').textContent = Math.floor(Math.random() * 50) + 1;
+            
+            const list = document.getElementById('productsList');
+            adminProductsCache = products || [];
+            if (products && products.length) {
+                list.innerHTML = products.map(p => `
+                    <tr>
+                        <td>
+                            <div class="prod-cell">
+                                <img src="${escapeHtml(p.image_url)}" alt="">
+                                <div>
+                                    <strong>${escapeHtml(p.name)}</strong>
+                                    <small>${escapeHtml(p.collection || p.sku || 'ZOE DEPT.')}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${escapeHtml(getProductCategories(p).map(cat => categoryLabels[cat] || cat).join(', ') || '-')}</td>
+                        <td>
+                            <div class="price-cell">
+                                <strong>${formatUsd(p.price_usd)}</strong>
+                                <small>${p.price_htg ? `${Number(p.price_htg).toLocaleString('fr-FR')} HTG` : '-'}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-badge ${isProductPreorder(p) ? 'status-preorder' : p.is_available ? 'status-completed' : 'status-offline'}">
+                                ${isProductPreorder(p) ? 'Pre Komand' : p.is_available ? 'An Stock' : 'Pa Disponib'}
+                            </span>
+                        </td>
+                        <td>
+                            <button onclick="editProduct('${p.id}')" class="btn-edit">Modifye</button>
+                            <button onclick="deleteProduct('${p.id}')" class="btn-delete">Retire</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                list.innerHTML = '<tr><td colspan="5" class="empty-cell">Pa gen pwodwi ankò.</td></tr>';
+            }
+        }
+
+        // Chaje Kòmand yo
+        async function loadOrders() {
+            const supabase = window.supabaseHelpers.supabase;
+            const { data: orders } = await supabase
+                .from('orders')
+                .select(`
+                    *,
+                    users_profiles (first_name, last_name)
+                `)
+                .order('created_at', { ascending: false });
+
+            const { data: preorders } = await supabase
+                .from('preorders')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            const list = document.getElementById('ordersList');
+            const orderRows = (orders || []).map(o => {
+                const item = Array.isArray(o.items) ? o.items[0] : {};
+                return `
+                <tr>
+                    <td>#${o.id.slice(0, 8)}</td>
+                    <td>
+                        <strong>${escapeHtml(o.customer_email || o.users_profiles?.first_name || 'Kliyan')}</strong><br>
+                        <small>${escapeHtml(o.customer_phone || '-')} | ${escapeHtml(o.customer_address || '-')}</small><br>
+                        <small>Pwodwi: ${escapeHtml(item?.name || '-')} | Size: ${escapeHtml(item?.size || '-')} | Koulè: ${escapeHtml(item?.color || '-')}</small>
+                    </td>
+                    <td>${Number(o.total_htg || o.total || 0).toLocaleString('fr-FR')} GDS</td>
+                    <td>
+                        <span class="status-badge status-${o.status}">${o.status === 'shipped' ? 'Voye' : 'Ankou'}</span>
+                        <button class="btn light btn-compact" onclick="markOrderShipped('${o.id}', '${escapeHtml(o.customer_email || '')}')">Voye</button>
+                    </td>
+                </tr>
+            `});
+            const preorderRows = (preorders || []).map(p => `
+                <tr>
+                    <td>#PRE-${String(p.id).slice(0, 8)}</td>
+                    <td>
+                        <strong>${escapeHtml(p.customer_email || 'Kliyan')}</strong><br>
+                        <small>${escapeHtml(p.customer_phone || '-')} | ${escapeHtml(p.customer_address || '-')}</small><br>
+                        <small>Pwodwi: ${escapeHtml(p.product_name || '-')} | Size: ${escapeHtml(p.selected_size || '-')} | Koulè: ${escapeHtml(p.selected_color || '-')}</small>
+                    </td>
+                    <td>${p.price_usd ? `$${p.price_usd}` : 'Pre Komand'}</td>
+                    <td><span class="status-badge status-preorder">${escapeHtml(p.status || 'preorder')}</span></td>
+                </tr>
+            `);
+            list.innerHTML = [...preorderRows, ...orderRows].join('') || '<tr><td colspan="4" class="empty-cell">Pa gen kòmand ankò.</td></tr>';
+        }
+
+        async function loadPromoCodes() {
+            const { data } = await window.supabaseHelpers.supabase
+                .from('promo_codes')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            const list = document.getElementById('promoList');
+            if (!data || !data.length) {
+                list.innerHTML = '<tr><td colspan="4" class="empty-cell">Pa gen kòd promo ankò.</td></tr>';
+                return;
+            }
+
+            list.innerHTML = data.map(code => `
+                <tr>
+                    <td><strong>${escapeHtml(code.code)}</strong></td>
+                    <td>${Number(code.discount_percent || 0)}%</td>
+                    <td>${Number(code.used_count || 0)} / ${code.usage_limit || '∞'}</td>
+                    <td><button class="btn-delete" onclick="deletePromoCode('${code.id}')">Retire</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function deletePromoCode(id) {
+            await window.supabaseHelpers.supabase.from('promo_codes').delete().eq('id', id);
+            loadPromoCodes();
+        }
+
+        // Koute chanjman an tan reyèl
+        function setupRealtime() {
+            const supabase = window.supabaseHelpers.supabase;
+            
+            // Lè yon pwodwi ajoute oswa retire
+            supabase.channel('admin-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => loadAdminData())
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+                    loadAdminData();
+                    if (!document.getElementById('ordersSection').classList.contains('hidden')) loadOrders();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'preorders' }, () => {
+                    loadAdminData();
+                    if (!document.getElementById('ordersSection').classList.contains('hidden')) loadOrders();
+                })
+                .subscribe();
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('Èske ou vle retire pwodwi sa a nèt?')) return;
+            const { error } = await window.supabaseHelpers.supabase.from('products').delete().eq('id', id);
+            if (!error) loadAdminData();
+        }
+
+        async function markOrderShipped(id, email) {
+            await window.supabaseHelpers.supabase.from('orders').update({ status: 'shipped' }).eq('id', id);
+            if (email) {
+                window.location.href = `mailto:${email}?subject=Kòmand ZOE DEPT ou voye&body=Bonjou, colis ou a voye. Mèsi paske ou chwazi ZOE DEPT.`;
+            }
+            loadOrders();
+        }
+
         document.getElementById('adminLogout').addEventListener('click', async () => {
-            try { localStorage.removeItem('adminAccess'); } catch(e){}
-            const { error } = await supabase.auth.signOut();
+            const { error } = await window.supabaseHelpers.logoutUser();
             window.location.href = 'index.html';
         });
 
+        document.getElementById('promoForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const payload = {
+                code: document.getElementById('promoCode').value.trim().toUpperCase(),
+                discount_percent: Number(document.getElementById('promoPercent').value),
+                usage_limit: document.getElementById('promoLimit').value || null,
+                used_count: 0,
+                is_active: true
+            };
+            const { error } = await window.supabaseHelpers.supabase.from('promo_codes').insert([payload]);
+            if (error) {
+                alert('Erè kòd promo: ' + error.message);
+                return;
+            }
+            event.target.reset();
+            loadPromoCodes();
+        });
+
+        document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = "Ap Voye...";
+
+            const fileFace = document.getElementById('prodImageFace').files[0];
+            const fileBack = document.getElementById('prodImageBack').files[0];
+            
+            try {
+                // 1. Upload foto yo
+                const currentProduct = adminProductsCache.find(item => item.id === editingProductId) || {};
+                const urlFace = fileFace ? await window.supabaseHelpers.uploadImage(fileFace) : currentProduct.image_url;
+                const urlBack = fileBack ? await window.supabaseHelpers.uploadImage(fileBack) : currentProduct.back_image_url;
+                const colorVariants = await uploadColorVariants(currentProduct.color_variants || []);
+
+                // 2. Mete tout enfòmasyon nan baz de done a
+                const payload = buildProductPayload(urlFace, urlBack, colorVariants);
+                const wasEditing = Boolean(editingProductId);
+                const { error } = await saveProduct(payload);
+
+                if (error) throw error;
+                
+                resetProductForm();
+                alert(wasEditing ? "Pwodwi a modifye ak siksè!" : "Pwodwi a ajoute ak siksè!");
+                loadAdminData();
+            } catch (err) {
+                alert("Erè: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Pibliye Pwodwi a";
+            }
+        });
+
         checkAdminAccess();
+        loadAdminData();
+        loadPromoCodes();
+        setupRealtime();
     </script>
 </body>
 </html>

@@ -49,6 +49,13 @@
                     </div>
                 </section>
 
+                <section class="account-section">
+                    <h2>Pre Komand Mwen</h2>
+                    <div id="preorderInfo" class="account-details">
+                        <p>Pa gen pre komand pou montre.</p>
+                    </div>
+                </section>
+
                 <!-- Detay Kont -->
                 <section class="account-section">
                     <h2>Detay Kont</h2>
@@ -72,7 +79,7 @@
 
     <footer class="footer">
         <strong>ZOE DEPT.</strong>
-        <span>Listwa on Peyi, Fyète on Pèp.</span>
+        <span>© 2026 ZOE DEPT, Tout dwa rezève. Sit sa fèt pa URBVEC ATELIER .</span>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -80,9 +87,18 @@
     <script>
         // Verifye si itilizatè a konekte
         async function checkAuth() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await window.supabaseHelpers.supabase.auth.getSession();
+            const preorderLead = JSON.parse(localStorage.getItem('zoePreorderLead') || '{}');
+            const lastOrder = JSON.parse(localStorage.getItem('zoeLastOrder') || '{}');
             
             if (!session) {
+                if (preorderLead.customer_email) {
+                    document.getElementById('fullName').textContent = 'Kont ap tann konfimasyon';
+                    document.getElementById('userEmail').textContent = preorderLead.customer_email;
+                    renderPreorderLead(preorderLead);
+                    renderOrderFallback(lastOrder);
+                    return;
+                }
                 window.location.href = 'login.html';
                 return;
             }
@@ -94,11 +110,92 @@
             document.getElementById('fullName').textContent = 
                 (metadata.first_name || '') + ' ' + (metadata.last_name || '');
             document.getElementById('userEmail').textContent = user.email;
+            await loadUserPreorders(user.email, preorderLead);
+            await loadUserOrders(user.email, lastOrder);
+        }
+
+        function orderStatusText(status) {
+            return status === 'shipped' ? 'Voye' : 'An preparasyon';
+        }
+
+        function renderOrderRows(orders) {
+            if (!orders || !orders.length) {
+                document.getElementById('orderHistory').innerHTML = '<p>Ou pa fè okenn kòmand ankò.</p>';
+                return;
+            }
+
+            document.getElementById('orderHistory').innerHTML = orders.map(order => {
+                const item = Array.isArray(order.items) ? order.items[0] : {};
+                return `
+                    <div class="preorder-account-item">
+                        <p><strong>Pwodwi:</strong> ${item?.name || '-'}</p>
+                        <p><strong>Size:</strong> ${item?.size || '-'}</p>
+                        <p><strong>Koulè:</strong> ${item?.color || '-'}</p>
+                        <p><strong>Total:</strong> ${Number(order.total_htg || 0).toLocaleString('fr-FR')} GDS</p>
+                        <p><strong>Statut colis:</strong> ${orderStatusText(order.status)}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderOrderFallback(order) {
+            if (!order.customer_email) return;
+            renderOrderRows([order]);
+        }
+
+        async function loadUserOrders(email, fallbackOrder) {
+            const { data, error } = await window.supabaseHelpers.supabase
+                .from('orders')
+                .select('*')
+                .eq('customer_email', email)
+                .order('created_at', { ascending: false });
+
+            if (error || !data || !data.length) {
+                renderOrderFallback(fallbackOrder || {});
+                return;
+            }
+
+            renderOrderRows(data);
+        }
+
+        function renderPreorderLead(lead) {
+            if (!lead.customer_email) return;
+            document.getElementById('preorderInfo').innerHTML = `
+                <p><strong>Pwodwi:</strong> ${lead.product_name || '-'}</p>
+                <p><strong>Size:</strong> ${lead.selected_size || '-'}</p>
+                <p><strong>Imèl:</strong> ${lead.customer_email || '-'}</p>
+                <p><strong>Telefòn:</strong> ${lead.customer_phone || '-'}</p>
+                <p><strong>Adrès:</strong> ${lead.customer_address || '-'}</p>
+                <p><strong>Estati:</strong> Pre Komand resevwa</p>
+            `;
+        }
+
+        async function loadUserPreorders(email, fallbackLead) {
+            const { data, error } = await window.supabaseHelpers.supabase
+                .from('preorders')
+                .select('*')
+                .eq('customer_email', email)
+                .order('created_at', { ascending: false });
+
+            if (error || !data || !data.length) {
+                renderPreorderLead(fallbackLead || {});
+                return;
+            }
+
+            document.getElementById('preorderInfo').innerHTML = data.map(item => `
+                <div class="preorder-account-item">
+                    <p><strong>Pwodwi:</strong> ${item.product_name || '-'}</p>
+                    <p><strong>Size:</strong> ${item.selected_size || '-'}</p>
+                    <p><strong>Telefòn:</strong> ${item.customer_phone || '-'}</p>
+                    <p><strong>Adrès:</strong> ${item.customer_address || '-'}</p>
+                    <p><strong>Estati:</strong> ${item.status || 'preorder'}</p>
+                </div>
+            `).join('');
         }
 
         // Fèmen sesyon
         document.getElementById('logoutBtn').addEventListener('click', async () => {
-            const { error } = await supabase.auth.signOut();
+            const { error } = await window.supabaseHelpers.supabase.auth.signOut();
             if (error) {
                 alert('Erè fèmti sesyon: ' + error.message);
                 return;
@@ -110,7 +207,7 @@
         checkAuth();
 
         // Swiv chanjman sesyon
-        supabase.auth.onAuthStateChange((event, session) => {
+        window.supabaseHelpers.supabase.auth.onAuthStateChange((event, session) => {
             if (!session && event === 'SIGNED_OUT') {
                 window.location.href = 'index.html';
             }

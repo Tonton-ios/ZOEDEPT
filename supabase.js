@@ -1,25 +1,32 @@
 // Configuration Supabase
-// Remplacez par vos vraies valeurs (URL complète et clé anon)
-const SUPABASE_URL = 'https://YOUR-SUPABASE-URL.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE';
+const SUPABASE_URL = 'https://nvhfbzhlzchyclzzjtka.supabase.co'; 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52aGZiemhsemNoeWNsenpqdGthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NjIzNzEsImV4cCI6MjA5NDUzODM3MX0.mQ2oyNbFDmCqEK5jSz2W7mjkBr5G3MNRXBG5WxiutG4';               // À remplacer par votre clé
 
 // Inisyalize Supabase
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabaseClient;
+try {
+    // On vérifie que les clés ne sont pas les valeurs par défaut pour éviter de planter
+    if (SUPABASE_URL.includes('YOUR-SUPABASE-URL')) {
+        console.warn("Supabase n'est pas encore configuré. L'accès admin local fonctionnera uniquement.");
+        supabaseClient = { auth: { signInWithPassword: () => Promise.resolve({ error: { message: "Supabase non configuré" } }), getSession: () => Promise.resolve({ data: { session: null } }) } };
+    } else {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+} catch (e) {
+    console.error("Erè inisyalizasyon Supabase:", e);
+}
 
-// Option: identifiants admin (si vous voulez un accès admin simple côté client)
-// ATTENTION: stocker des secrets côté client n'est pas sécurisé en production.
-const ADMIN_EMAIL = 'admin@example.com';
-const ADMIN_CODE = 'ZOE2024ADMIN'; // Ton code spécial
 
+const ADMIN_EMAIL = 'zoedept2026@gmail.com'; 
 // Fonksyon pou rekupere itilizatè ki konekte a
 async function getCurrentUser() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     return session?.user || null;
 }
 
 // Fonksyon pou enskripsyon (Kreye yon kont)
 async function signUpUser(email, password, firstName, lastName) {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -34,43 +41,58 @@ async function signUpUser(email, password, firstName, lastName) {
 
 // Fonksyon pou koneksyon (Konekte)
 async function signInUser(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    
-    if (error) return { data, error };
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
 
-    // Si c'est l'admin (Email spécial + Password qui sert de Code spécial)
-    if (email === ADMIN_EMAIL && password === ADMIN_CODE) {
-        localStorage.setItem('adminAccess', '1');
-        window.location.href = 'admin.html';
-    } else {
-        // Sinon redirection normale
-        window.location.href = 'account.html'; // Redireksyon vè kont itilizatè
+    // Essayer l'authentification réelle Supabase
+    try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: cleanEmail, password: cleanPassword });
+        
+        if (error) return { data, error };
+
+        // Redireksyon: si se admin nan, ale panel admin; sinon ale kont kliyan
+        window.location.href = (cleanEmail === ADMIN_EMAIL.toLowerCase()) ? 'admin.html' : 'account.html';
+        return { data, error };
+    } catch (err) {
+        console.error("Erè koneksyon:", err);
+        return { data: null, error: { message: "Sèvè a pa reponn. Verifye koneksyon ou." } };
     }
-    
-    return { data, error };
 }
 
 async function logoutUser() {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabaseClient.auth.signOut();
     window.location.href = 'index.html';
     return error;
 }
 
 // Listener d'auth: utile pour redirect automatique ou mise à jour UI
 function onAuthChange(callback) {
-    return supabase.auth.onAuthStateChange((event, session) => {
+    return supabaseClient.auth.onAuthStateChange((event, session) => {
         callback(event, session);
     });
 }
 
+// Fonksyon pou uploade imaj nan Storage
+async function uploadImage(file) {
+    const fileName = `${Date.now()}_${file.name}`;
+    const { data, error } = await supabaseClient.storage
+        .from('product-images')
+        .upload(fileName, file);
+    
+    if (error) throw error;
+    
+    const { data: urlData } = supabaseClient.storage.from('product-images').getPublicUrl(data.path);
+    return urlData.publicUrl;
+}
+
 // Expose helpers globally for pages
 window.supabaseHelpers = {
-    supabase,
+    supabase: supabaseClient,
     getCurrentUser,
     signUpUser,
     signInUser,
     logoutUser,
     onAuthChange,
     ADMIN_EMAIL,
-    ADMIN_CODE
+    uploadImage
 };

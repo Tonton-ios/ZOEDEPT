@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panye | ZOE DEPT.</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <input class="nav-toggle-checkbox" type="checkbox" id="nav-toggle" aria-label="Ouvri meni a">
+        <label class="hamburger" for="nav-toggle" aria-label="Ouvri meni a"><span></span></label>
+
+        <nav class="nav-links" aria-label="Navigasyon prensipal">
+            <details class="nav-menu">
+                <summary>Atelye</summary>
+                <div class="dropdown-menu">
+                    <a href="fek-paret.html">Fèk Parèt</a>
+                    <a href="tout-net.html">Tout Nèt</a>
+                    <a href="mayo.html">Mayo</a>
+                </div>
+            </details>
+            <a class="nav-direct" href="boutik.html">Boutik</a>
+        </nav>
+
+        <a class="brand" href="index.html" aria-label="Akèy ZOE DEPT.">
+            <img src="img/zoe_logo.svg" alt="ZOE DEPT.">
+        </a>
+
+        <div class="nav-actions" aria-label="Aksyon">
+            <button class="nav-action icon-search" type="button" aria-label="Rechèch"></button>
+            <a class="nav-action icon-cart" href="panye.html" aria-label="Panye">
+                <span class="cart-badge">0</span>
+            </a>
+            <a class="nav-action icon-user" href="login.html" aria-label="Koneksyon"></a>
+        </div>
+    </header>
+
+    <main>
+        <section class="page-section simple-page">
+            <div class="section-title">
+                <p class="eyebrow">Panye</p>
+                <h1>Panye ou vid.</h1>
+                <p>Ou poko ajoute anyen nan panye a.</p>
+            </div>
+            <div class="about-panel">
+                <h2>Kòmanse achte</h2>
+                <p>Dekouvri dènye koleksyon nou yo epi chwazi sa ki fè fyète ou.</p>
+                <a class="btn dark" href="boutik.html">Wè tout pwodwi yo</a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <strong>ZOE DEPT.</strong>
+        <span>© 2026 ZOE DEPT, Tout dwa rezève. Sit sa fèt pa URBVEC ATELIER .</span>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+</body>
+</html>
