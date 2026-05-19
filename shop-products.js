@@ -133,6 +133,28 @@ function productSizes(product) {
     return [];
 }
 
+function normalizeSearchValue(value = '') {
+    return String(value)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+function productSearchText(product) {
+    return normalizeSearchValue([
+        product.name,
+        product.collection,
+        product.sku,
+        product.product_type,
+        product.gender,
+        cleanDescription(product),
+        productCategories(product).join(' '),
+        productSizes(product).join(' '),
+        productVariants(product).map(variant => variant.color).join(' '),
+        Array.isArray(product.tags) ? product.tags.join(' ') : product.tags
+    ].filter(Boolean).join(' '));
+}
+
 function productCard(product) {
     const variants = productVariants(product);
     const sizes = productSizes(product);
@@ -293,29 +315,67 @@ function closeProductModal() {
 function openProductModal(product) {
     ensureProductModal();
     window.currentModalProduct = product;
+    const variants = productVariants(product);
+    const sizes = productSizes(product);
+    window.currentModalSelection = {
+        color: variants[0]?.color || '',
+        image: variants[0]?.image || product.image_url || '',
+        size: sizes[0] || ''
+    };
     document.getElementById('productModalKicker').textContent = product.collection || 'ZOE DEPT.';
     document.getElementById('productModalTitle').textContent = product.name;
     document.getElementById('productModalDescription').textContent = cleanDescription(product);
-    document.getElementById('productModalFront').src = product.image_url || '';
+    document.getElementById('productModalFront').src = window.currentModalSelection.image;
     document.getElementById('productModalBack').src = product.back_image_url || product.image_url || '';
 
-    const sizes = productSizes(product).join(', ') || '-';
-    const colors = productVariants(product).map(variant => variant.color).join(', ') || (Array.isArray(product.colors) ? product.colors.join(', ') : '-') || '-';
+    const colorButtons = variants.map((variant, index) => `
+        <button
+            class="modal-color-choice ${index === 0 ? 'active' : ''}"
+            type="button"
+            data-color="${zoeEscape(variant.color)}"
+            data-image="${zoeEscape(variant.image)}">
+            ${zoeEscape(variant.color)}
+        </button>
+    `).join('');
+    const sizeButtons = sizes.map((size, index) => `
+        <button
+            class="modal-size-choice ${index === 0 ? 'active' : ''}"
+            type="button"
+            data-size="${zoeEscape(size)}">
+            ${zoeEscape(size)}
+        </button>
+    `).join('');
+
     document.getElementById('productModalMeta').innerHTML = `
         <p><strong>Pri:</strong> ${zoeEscape(formatHTG(product.price_htg) || formatUSD(product.price_usd) || '-')}</p>
-        <p><strong>Size:</strong> ${zoeEscape(sizes)}</p>
-        <p><strong>Koulè:</strong> ${zoeEscape(colors)}</p>
+        ${sizeButtons ? `<div class="modal-option-group"><strong>Size</strong><div class="modal-option-row">${sizeButtons}</div></div>` : '<p><strong>Size:</strong> -</p>'}
+        ${colorButtons ? `<div class="modal-option-group"><strong>Koulè</strong><div class="modal-option-row">${colorButtons}</div></div>` : '<p><strong>Koulè:</strong> -</p>'}
         <p><strong>Estati:</strong> ${isPreorder(product) ? 'Pre Komand' : product.is_available ? 'An Stock' : 'Pa Disponib'}</p>
         ${product.material ? `<p><strong>Materyèl:</strong> ${zoeEscape(product.material)}</p>` : ''}
         ${product.fit ? `<p><strong>Koupe:</strong> ${zoeEscape(product.fit)}</p>` : ''}
         ${product.care ? `<p><strong>Antretyen:</strong> ${zoeEscape(product.care)}</p>` : ''}
     `;
+    document.querySelectorAll('.modal-color-choice').forEach(button => {
+        button.addEventListener('click', () => {
+            window.currentModalSelection.color = button.dataset.color || '';
+            window.currentModalSelection.image = button.dataset.image || product.image_url || '';
+            document.getElementById('productModalFront').src = window.currentModalSelection.image;
+            document.querySelectorAll('.modal-color-choice').forEach(item => item.classList.remove('active'));
+            button.classList.add('active');
+        });
+    });
+    document.querySelectorAll('.modal-size-choice').forEach(button => {
+        button.addEventListener('click', () => {
+            window.currentModalSelection.size = button.dataset.size || '';
+            document.querySelectorAll('.modal-size-choice').forEach(item => item.classList.remove('active'));
+            button.classList.add('active');
+        });
+    });
     const modalCta = document.getElementById('productModalCta');
     modalCta.textContent = isPreorder(product) ? 'Pre Komand' : 'Achte kounya';
     modalCta.onclick = () => {
-        const fakeRoot = document;
-        const detailSize = productSizes(product)[0] || '';
-        const detailColor = productVariants(product)[0]?.color || '';
+        const detailSize = window.currentModalSelection?.size || productSizes(product)[0] || '';
+        const detailColor = window.currentModalSelection?.color || productVariants(product)[0]?.color || '';
         if (isPreorder(product)) {
             window.currentPreorderSize = detailSize;
             window.currentPreorderColor = detailColor;
@@ -501,7 +561,11 @@ function openPreorderModal(product) {
     window.currentPreorderProduct = product;
     document.getElementById('preorderTitle').textContent = product.name;
     document.getElementById('preorderMessage').textContent = preorderNote(product);
-    document.getElementById('preorderReady').textContent = `${preorderReadyText(product)}${window.currentPreorderSize ? ` Size chwazi: ${window.currentPreorderSize}.` : ''}`;
+    document.getElementById('preorderReady').textContent = [
+        preorderReadyText(product),
+        window.currentPreorderSize ? `Size chwazi: ${window.currentPreorderSize}.` : '',
+        window.currentPreorderColor ? `Koulè chwazi: ${window.currentPreorderColor}.` : ''
+    ].filter(Boolean).join(' ');
     const savedLead = JSON.parse(localStorage.getItem('zoePreorderLead') || '{}');
     document.getElementById('preorderEmail').value = savedLead.customer_email || '';
     document.getElementById('preorderPhone').value = savedLead.customer_phone || '';
@@ -800,6 +864,26 @@ function renderCategoryPage(products) {
 function renderToutNet(products) {
     const mount = document.getElementById('dynamicToutNetSections');
     if (!mount) return;
+
+    const searchQuery = new URLSearchParams(window.location.search).get('search')?.trim() || '';
+    if (searchQuery) {
+        const normalizedQuery = normalizeSearchValue(searchQuery);
+        const results = products.filter(product => productSearchText(product).includes(normalizedQuery));
+        document.querySelector('.section-title h1').textContent = 'Rechèch';
+        document.querySelector('.section-title p:last-child').textContent = `Rezilta pou "${searchQuery}".`;
+
+        if (!results.length) {
+            mount.innerHTML = '<div class="empty-products">Pa gen pwodwi ki koresponn ak rechèch sa.</div>';
+            return;
+        }
+
+        mount.innerHTML = `<div class="product-grid">${results.map(productCard).join('')}</div>`;
+        wireColorSwatches(mount);
+        wireSizeChoices(mount);
+        wireCurrencyToggles(mount);
+        wireProductActions(results, mount);
+        return;
+    }
 
     if (!products.length) {
         mount.innerHTML = '<div class="empty-products">Pa gen pwodwi ankò.</div>';
