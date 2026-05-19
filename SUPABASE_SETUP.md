@@ -31,6 +31,23 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
 2. Assurez-vous que **Email** est activé
 3. Personnalisez les emails de confirmation si désiré
 
+### Étape 4B : Variables Vercel pour MonCash
+Dans Vercel, ajoutez ces variables dans **Settings > Environment Variables**:
+
+```text
+MONCASH_CLIENT_ID=e35354596a4101eb1bec996e4b6dd7a9
+MONCASH_CLIENT_SECRET=votre_client_secret_sandbox
+SUPABASE_URL=votre_url_supabase
+SUPABASE_KEY=votre_service_role_key_ou_cle_backend
+```
+
+Par défaut, l'intégration utilise le sandbox MonCash. Pour la production, ajoutez aussi:
+
+```text
+MONCASH_API_BASE_URL=https://moncashbutton.digicelgroup.com/Api
+MONCASH_GATEWAY_BASE_URL=https://moncashbutton.digicelgroup.com/Moncash-middleware
+```
+
 ### Étape 5 : Créer les tables de données
 Dans Supabase SQL Editor, créez:
 
@@ -168,6 +185,20 @@ CREATE TABLE IF NOT EXISTS promo_codes (
   used_count INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+#### Table: transactions
+Pour suivre les paiements MonCash:
+
+```sql
+CREATE TABLE IF NOT EXISTS transactions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_id TEXT UNIQUE NOT NULL,
+  transaction_id TEXT,
+  montant NUMERIC,
+  statut TEXT DEFAULT 'en_attente',
+  created_at TIMESTAMP DEFAULT NOW()
 );
 ```
 

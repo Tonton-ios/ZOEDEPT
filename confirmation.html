@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfimasyon Paiement | ZOE DEPT.</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <input class="nav-toggle-checkbox" type="checkbox" id="nav-toggle" aria-label="Ouvri meni a">
+        <label class="hamburger" for="nav-toggle" aria-label="Ouvri meni a"><span></span></label>
+
+        <nav class="nav-links" aria-label="Navigasyon prensipal">
+            <a class="nav-direct" href="index.html">Akèy</a>
+            <a class="nav-direct" href="fek-paret.html">Fèk Parèt</a>
+            <a class="nav-direct" href="boutik.html">Boutik</a>
+        </nav>
+
+        <a class="brand" href="index.html" aria-label="Akèy ZOE DEPT.">
+            <img src="img/zoe_logo.svg" alt="ZOE DEPT.">
+        </a>
+
+        <div class="nav-actions" aria-label="Aksyon">
+            <button class="nav-action icon-search" type="button" aria-label="Rechèch"></button>
+            <a class="nav-action icon-cart" href="panye.html" aria-label="Panye"></a>
+            <a class="nav-action icon-user" href="login.html" aria-label="Koneksyon"></a>
+        </div>
+    </header>
+
+    <main>
+        <section class="page-section simple-page payment-result-page">
+            <div class="section-title">
+                <p class="eyebrow">Mon Cash</p>
+                <h1 id="paymentTitle">N ap verifye paiement la.</h1>
+                <p id="paymentMessage">Tanpri tann yon ti moman pandan n ap konfime tranzaksyon an.</p>
+            </div>
+            <div class="about-panel payment-result-panel">
+                <h2>Detay</h2>
+                <p id="paymentDetails">Kòd kòmand lan ap parèt isit la.</p>
+                <a class="btn dark" href="account.html">Ale nan kont mwen</a>
+                <a class="btn light" href="fek-paret.html">Kontinye achte</a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <strong>ZOE DEPT.</strong>
+        <span>© 2026 ZOE DEPT, Tout dwa rezève. Sit sa fèt pa URBVEC ATELIER .</span>
+    </footer>
+
+    <script>
+        async function verifierPaiement() {
+            const params = new URLSearchParams(window.location.search);
+            const pending = JSON.parse(localStorage.getItem('zoePendingMoncash') || '{}');
+            const transactionId = params.get('transactionId') || params.get('transaction_id');
+            const orderId = params.get('orderId') || params.get('order_id') || pending.orderId || '';
+
+            document.getElementById('paymentDetails').textContent = orderId ? `Kòmand: ${orderId}` : 'Kòmand lan poko idantifye.';
+
+            if (!transactionId && !orderId) {
+                document.getElementById('paymentTitle').textContent = 'Nou pa jwenn detay paiement la.';
+                document.getElementById('paymentMessage').textContent = 'Si ou te peye deja, kontakte ekip ZOE DEPT ak nimewo tranzaksyon Mon Cash la.';
+                return;
+            }
+
+            const query = new URLSearchParams();
+            if (transactionId) query.set('transactionId', transactionId);
+            if (orderId) query.set('orderId', orderId);
+
+            try {
+                const res = await fetch(`/api/verifier-paiement?${query.toString()}`);
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.error || 'Verifikasyon an echwe.');
+
+                if (result.success) {
+                    localStorage.removeItem('zoePendingMoncash');
+                    document.getElementById('paymentTitle').textContent = 'Paiement la konfime.';
+                    document.getElementById('paymentMessage').textContent = 'Mèsi. Nou resevwa paiement ou, ekip ZOE DEPT ap prepare kòmand lan.';
+                } else {
+                    document.getElementById('paymentTitle').textContent = 'Paiement la pa konfime.';
+                    document.getElementById('paymentMessage').textContent = 'Si lajan an soti sou kont ou, kontakte ekip ZOE DEPT ak prèv tranzaksyon an.';
+                }
+            } catch (error) {
+                document.getElementById('paymentTitle').textContent = 'Verifikasyon an pa pase.';
+                document.getElementById('paymentMessage').textContent = error.message;
+            }
+        }
+
+        verifierPaiement();
+    </script>
+    <script src="site.js"></script>
+</body>
+</html>

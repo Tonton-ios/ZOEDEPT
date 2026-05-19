@@ -792,23 +792,71 @@ async function submitOrder(event) {
         promo_code: window.appliedPromo?.code || null
     };
 
-    const { error } = await window.supabaseHelpers.supabase.from('orders').insert([payload]);
+    if (payload.payment_method !== 'Mon Cash') {
+        alert(`${payload.payment_method} poko konekte. Chwazi Mon Cash pou peye kounye a.`);
+        return;
+    }
+
+    const payButton = event.submitter || document.querySelector('#checkoutForm button[type="submit"]');
+    if (payButton) {
+        payButton.disabled = true;
+        payButton.textContent = 'Ap prepare paiement...';
+    }
+
+    const { data: order, error } = await window.supabaseHelpers.supabase
+        .from('orders')
+        .insert([payload])
+        .select('id')
+        .single();
     if (error) {
+        if (payButton) {
+            payButton.disabled = false;
+            payButton.textContent = 'Peye kounya';
+        }
         alert('Erè kòmand: ' + error.message);
         return;
     }
 
-    if (window.appliedPromo) {
-        await window.supabaseHelpers.supabase
-            .from('promo_codes')
-            .update({ used_count: Number(window.appliedPromo.used_count || 0) + 1 })
-            .eq('id', window.appliedPromo.id);
-    }
+    const orderId = order?.id || `CMD-${Date.now()}`;
+    const savedOrder = { ...payload, id: orderId };
+    localStorage.setItem('zoeLastOrder', JSON.stringify(savedOrder));
 
-    localStorage.setItem('zoeLastOrder', JSON.stringify(payload));
-    window.location.href = `mailto:${payload.customer_email}?subject=Nou resevwa kòmand ZOE DEPT ou&body=Bonjou ${payload.customer_first_name}, nou resevwa kòmand ou pou ${item.name}. Total: ${formatHTG(payload.total_htg)}. Mèsi paske ou chwazi ZOE DEPT.`;
-    closeCheckout();
-    alert('Kòmand ou resevwa. Nou voye rezime a sou imèl ou.');
+    try {
+        const response = await fetch('/api/creer-paiement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: payload.total_htg,
+                orderId,
+                order: savedOrder
+            })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.redirectUrl) {
+            throw new Error(result.error || 'MonCash pa disponib pou kounye a.');
+        }
+
+        localStorage.setItem('zoePendingMoncash', JSON.stringify({
+            orderId: result.orderId || orderId,
+            amount: payload.total_htg,
+            customer_email: payload.customer_email
+        }));
+
+        if (window.appliedPromo) {
+            await window.supabaseHelpers.supabase
+                .from('promo_codes')
+                .update({ used_count: Number(window.appliedPromo.used_count || 0) + 1 })
+                .eq('id', window.appliedPromo.id);
+        }
+
+        window.location.href = result.redirectUrl;
+    } catch (err) {
+        if (payButton) {
+            payButton.disabled = false;
+            payButton.textContent = 'Peye kounya';
+        }
+        alert('Erè MonCash: ' + err.message);
+    }
 }
 
 function wireProductActions(products, root = document) {
