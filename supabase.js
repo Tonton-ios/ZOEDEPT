@@ -74,7 +74,9 @@ function onAuthChange(callback) {
 
 // Fonksyon pou uploade imaj nan Storage
 async function uploadImage(file) {
-    const fileName = `${Date.now()}_${file.name}`;
+    const safeName = file.name.replace(/[^a-z0-9._-]/gi, '-').toLowerCase();
+    const uniqueId = (window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    const fileName = `${uniqueId}_${safeName}`;
     const { data, error } = await supabaseClient.storage
         .from('product-images')
         .upload(fileName, file);

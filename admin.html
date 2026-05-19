@@ -494,7 +494,7 @@
                 .join(', ');
         }
 
-        function addColorVariantRow(color = '') {
+        function addColorVariantRow(color = '', imageUrl = '') {
             const list = document.getElementById('colorVariantList');
             const row = document.createElement('div');
             row.className = 'variant-row';
@@ -506,11 +506,23 @@
                 <div class="form-group">
                     <label>Imaj koulè sa</label>
                     <input class="variant-color-file" type="file" accept="image/*">
+                    <figure class="variant-preview ${imageUrl ? 'active' : ''}">
+                        <img src="${escapeHtml(imageUrl)}" alt="Preview koulè ${escapeHtml(color)}">
+                        <figcaption>${imageUrl ? 'Imaj deja sove' : 'Chwazi yon imaj'}</figcaption>
+                    </figure>
                 </div>
                 <button type="button" class="btn-delete variant-remove">Retire</button>
             `;
             list.appendChild(row);
             row.querySelector('.variant-color-name').addEventListener('input', syncColorInput);
+            row.querySelector('.variant-color-file').addEventListener('change', event => {
+                const file = event.target.files[0];
+                const preview = row.querySelector('.variant-preview');
+                if (!file || !preview) return;
+                preview.querySelector('img').src = URL.createObjectURL(file);
+                preview.querySelector('figcaption').textContent = 'Nouvo imaj pare pou upload';
+                preview.classList.add('active');
+            });
             row.querySelector('.variant-remove').addEventListener('click', () => {
                 row.remove();
                 syncColorInput();
@@ -571,7 +583,7 @@
 
             document.getElementById('colorVariantList').innerHTML = '';
             const variants = Array.isArray(product.color_variants) ? product.color_variants : [];
-            if (variants.length) variants.forEach(variant => addColorVariantRow(variant.color || ''));
+            if (variants.length) variants.forEach(variant => addColorVariantRow(variant.color || '', variant.image_url || ''));
             else (product.colors || ['Nwa']).forEach(color => addColorVariantRow(color));
 
             document.getElementById('prodImageFace').required = false;
@@ -711,18 +723,21 @@
             const supabase = window.supabaseHelpers.supabase;
 
             // Pwodwi
-            const { data: products } = await supabase
+            const { data: products, error: productsError } = await supabase
                 .from('products')
                 .select('*')
                 .order('created_at', { ascending: false });
+            if (productsError) console.warn('Erè pwodwi admin:', productsError.message);
 
             // Kòmand + Pre Komand
-            const { count: orderCount } = await supabase
+            const { count: orderCount, error: orderCountError } = await supabase
                 .from('orders')
                 .select('*', { count: 'exact', head: true });
-            const { count: preorderCount } = await supabase
+            const { count: preorderCount, error: preorderCountError } = await supabase
                 .from('preorders')
                 .select('*', { count: 'exact', head: true });
+            if (orderCountError) console.warn('Erè konte kòmand:', orderCountError.message);
+            if (preorderCountError) console.warn('Erè konte pre komand:', preorderCountError.message);
 
             document.getElementById('totalProducts').textContent = products?.length || 0;
             document.getElementById('totalOrders').textContent = (orderCount || 0) + (preorderCount || 0);
@@ -770,27 +785,29 @@
         // Chaje Kòmand yo
         async function loadOrders() {
             const supabase = window.supabaseHelpers.supabase;
-            const { data: orders } = await supabase
+            const { data: orders, error: ordersError } = await supabase
                 .from('orders')
-                .select(`
-                    *,
-                    users_profiles (first_name, last_name)
-                `)
-                .order('created_at', { ascending: false });
-
-            const { data: preorders } = await supabase
-                .from('preorders')
                 .select('*')
                 .order('created_at', { ascending: false });
 
+            const { data: preorders, error: preordersError } = await supabase
+                .from('preorders')
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (ordersError) console.warn('Erè chajman kòmand:', ordersError.message);
+            if (preordersError) console.warn('Erè chajman pre komand:', preordersError.message);
+
             const list = document.getElementById('ordersList');
+            const errorRows = [ordersError, preordersError]
+                .filter(Boolean)
+                .map(error => `<tr><td colspan="4" class="empty-cell">Erè chajman: ${escapeHtml(error.message)}</td></tr>`);
             const orderRows = (orders || []).map(o => {
                 const item = Array.isArray(o.items) ? o.items[0] : {};
                 return `
                 <tr>
-                    <td>#${o.id.slice(0, 8)}</td>
+                    <td>#${String(o.id).slice(0, 8)}</td>
                     <td>
-                        <strong>${escapeHtml(o.customer_email || o.users_profiles?.first_name || 'Kliyan')}</strong><br>
+                        <strong>${escapeHtml(o.customer_email || [o.customer_first_name, o.customer_last_name].filter(Boolean).join(' ') || 'Kliyan')}</strong><br>
                         <small>${escapeHtml(o.customer_phone || '-')} | ${escapeHtml(o.customer_address || '-')}</small><br>
                         <small>Pwodwi: ${escapeHtml(item?.name || '-')} | Size: ${escapeHtml(item?.size || '-')} | Koulè: ${escapeHtml(item?.color || '-')}</small>
                     </td>
@@ -813,7 +830,7 @@
                     <td><span class="status-badge status-preorder">${escapeHtml(p.status || 'preorder')}</span></td>
                 </tr>
             `);
-            list.innerHTML = [...preorderRows, ...orderRows].join('') || '<tr><td colspan="4" class="empty-cell">Pa gen kòmand ankò.</td></tr>';
+            list.innerHTML = [...errorRows, ...preorderRows, ...orderRows].join('') || '<tr><td colspan="4" class="empty-cell">Pa gen kòmand ankò.</td></tr>';
         }
 
         async function loadPromoCodes() {

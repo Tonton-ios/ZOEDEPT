@@ -166,7 +166,7 @@ function productCard(product) {
             <div class="product-info">
                 <p class="product-kicker">${zoeEscape(product.collection || category?.label || 'ZOE DEPT.')}</p>
                 <h3>${zoeEscape(product.name)}</h3>
-                <p>${zoeEscape(cleanDescription(product))}</p>
+                <p class="product-description">${zoeEscape(cleanDescription(product))}</p>
                 ${swatches ? `<div class="color-swatch-row">${swatches}</div>` : ''}
                 ${sizeButtons ? `<div class="size-choice-row">${sizeButtons}</div>` : ''}
                 <div class="product-bottom">
