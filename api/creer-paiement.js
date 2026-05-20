@@ -129,13 +129,18 @@ export default async function handler(req, res) {
       });
     }
 
-    const amount = Math.round(Number(req.body?.amount || 0)) || 0;
+    // Nettoyage robuste du montant
+    const parseSafeNum = (val) => {
+      if (typeof val === 'number') return val;
+      const cleaned = String(val || '').replace(/[^0-9.]/g, '');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    };
+
+    const amount = Math.round(parseSafeNum(req.body?.amount)) || 0;
     const orderPayload = req.body?.order && typeof req.body.order === 'object' ? req.body.order : null;
     let supabaseOrderId = req.body?.orderId ? String(req.body.orderId) : '';
-
-    if (amount <= 0) {
-      return res.status(400).json({ error: 'Montant invalide.' });
-    }
+    if (amount <= 0) return res.status(400).json({ error: 'Montant invalide.' });
 
     const supabase = getSupabase();
     if (!supabaseOrderId && orderPayload) {
@@ -151,10 +156,15 @@ export default async function handler(req, res) {
           customer_country: orderPayload.customer_country || 'Haiti',
           payment_method: orderPayload.payment_method || 'Mon Cash',
           items: Array.isArray(orderPayload.items) ? orderPayload.items : [],
-          subtotal: Number(orderPayload.subtotal_htg || orderPayload.subtotal || amount || 0),
-          shipping: Number(orderPayload.shipping_htg || orderPayload.shipping || 0),
-          discount: Number(orderPayload.discount_htg || orderPayload.discount || 0),
-          total: Number(orderPayload.total_htg || orderPayload.total || amount || 0),
+          // On envoie les deux versions pour être sûr de toucher la bonne colonne (total ou total_htg)
+          subtotal: parseSafeNum(orderPayload.subtotal_htg || orderPayload.subtotal || amount),
+          subtotal_htg: parseSafeNum(orderPayload.subtotal_htg || orderPayload.subtotal || amount),
+          shipping: parseSafeNum(orderPayload.shipping_htg || orderPayload.shipping || 0),
+          shipping_htg: parseSafeNum(orderPayload.shipping_htg || orderPayload.shipping || 0),
+          discount: parseSafeNum(orderPayload.discount_htg || orderPayload.discount || 0),
+          discount_htg: parseSafeNum(orderPayload.discount_htg || orderPayload.discount || 0),
+          total: parseSafeNum(orderPayload.total_htg || orderPayload.total || amount),
+          total_htg: parseSafeNum(orderPayload.total_htg || orderPayload.total || amount),
           promo_code: orderPayload.promo_code || null,
           status: 'pending'
         }])
