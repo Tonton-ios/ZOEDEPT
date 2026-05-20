@@ -201,11 +201,14 @@ export default async function handler(req, res) {
         const token = payment?.payment_token?.token;
 
         if (payRes.ok && token) {
-          console.log('Succès REST API: Token généré.');
+          console.log('✅ Succès REST API: Token généré.');
           redirectUrl = `${MONCASH_GATEWAY_BASE_URL}/Payment/Redirect?token=${encodeURIComponent(token)}`;
         } else {
-          const errorMsg = payment?.message || payment?.error_description || 'Erreur inconnue';
-          console.error('Échec REST API:', errorMsg);
+          const errorMsg = payment?.message || payment?.error_description || payment?.error || 'Erreur inconnue';
+          console.error('❌ Échec REST API:', {
+            status: payRes.status,
+            response: payment
+          });
           apiErrors.push({ error: errorMsg, step: 'moncash_rest', details: payment });
         }
       } catch (e) {
@@ -217,12 +220,12 @@ export default async function handler(req, res) {
     // PRIORITÉ 2: Fallback via Middleware (Si REST a échoué ou n'est pas configuré)
     if (!redirectUrl && hasMiddleware) {
       try {
-        console.log('Tentative de secours via Middleware...');
+        console.log('⚠️ Tentative de secours via Middleware (RSA)...');
         const middlewarePayment = await createMiddlewareCheckoutPayment({ amount, orderId: moncashOrderId });
         if (middlewarePayment?.redirectUrl) {
           redirectUrl = middlewarePayment.redirectUrl;
         } else {
-          console.error('MonCash Middleware Error Response:', middlewarePayment);
+          console.error('❌ Échec Middleware:', middlewarePayment);
           apiErrors.push(middlewarePayment);
         }
       } catch (e) {
