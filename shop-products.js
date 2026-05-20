@@ -803,13 +803,20 @@ async function submitOrder(event) {
         payButton.textContent = 'Ap prepare paiement...';
     }
 
+    const finalAmount = Math.round(Number(payload.total_htg || 0));
+    if (isNaN(finalAmount) || finalAmount <= 0) {
+        alert('Erè: Montan an pa valab.');
+        if (payButton) { payButton.disabled = false; payButton.textContent = 'Peye kounya'; }
+        return;
+    }
+
     const savedOrder = { ...payload };
     try {
         const response = await fetch('/api/creer-paiement', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                amount: payload.total_htg,
+                amount: finalAmount,
                 order: savedOrder
             })
         });

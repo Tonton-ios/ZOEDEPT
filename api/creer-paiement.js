@@ -129,11 +129,11 @@ export default async function handler(req, res) {
       });
     }
 
-    const amount = Math.round(Number(req.body?.amount || 0));
+    const amount = Math.round(Number(req.body?.amount || 0)) || 0;
     const orderPayload = req.body?.order && typeof req.body.order === 'object' ? req.body.order : null;
     let supabaseOrderId = req.body?.orderId ? String(req.body.orderId) : '';
 
-    if (!amount || amount <= 0) {
+    if (amount <= 0) {
       return res.status(400).json({ error: 'Montant invalide.' });
     }
 
@@ -151,10 +151,10 @@ export default async function handler(req, res) {
           customer_country: orderPayload.customer_country || 'Haiti',
           payment_method: orderPayload.payment_method || 'Mon Cash',
           items: Array.isArray(orderPayload.items) ? orderPayload.items : [],
-          subtotal: orderPayload.subtotal_htg || amount,
-          shipping: orderPayload.shipping_htg || 0,
-          discount: orderPayload.discount_htg || 0,
-          total: orderPayload.total_htg || amount,
+          subtotal: Number(orderPayload.subtotal_htg || orderPayload.subtotal || amount || 0),
+          shipping: Number(orderPayload.shipping_htg || orderPayload.shipping || 0),
+          discount: Number(orderPayload.discount_htg || orderPayload.discount || 0),
+          total: Number(orderPayload.total_htg || orderPayload.total || amount || 0),
           promo_code: orderPayload.promo_code || null,
           status: 'pending'
         }])
