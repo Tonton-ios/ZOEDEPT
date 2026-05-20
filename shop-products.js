@@ -803,41 +803,29 @@ async function submitOrder(event) {
         payButton.textContent = 'Ap prepare paiement...';
     }
 
-    const { data: order, error } = await window.supabaseHelpers.supabase
-        .from('orders')
-        .insert([payload])
-        .select('id')
-        .single();
-    if (error) {
-        if (payButton) {
-            payButton.disabled = false;
-            payButton.textContent = 'Peye kounya';
-        }
-        alert('Erè kòmand: ' + error.message);
-        return;
-    }
-
-    const orderId = order?.id || `CMD-${Date.now()}`;
-    const savedOrder = { ...payload, id: orderId };
-    localStorage.setItem('zoeLastOrder', JSON.stringify(savedOrder));
-
+    const savedOrder = { ...payload };
     try {
         const response = await fetch('/api/creer-paiement', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 amount: payload.total_htg,
-                orderId,
                 order: savedOrder
             })
         });
         const result = await response.json();
         if (!response.ok || !result.redirectUrl) {
-            throw new Error(result.error || 'MonCash pa disponib pou kounye a.');
+            console.error('MonCash API error:', result);
+            const detail = result.step ? `${result.error || 'MonCash pa disponib'} (${result.step})` : result.error;
+            throw new Error(detail || 'MonCash pa disponib pou kounye a.');
         }
 
+        savedOrder.id = result.orderId;
+        savedOrder.supabase_order_id = result.supabaseOrderId || '';
+        localStorage.setItem('zoeLastOrder', JSON.stringify(savedOrder));
         localStorage.setItem('zoePendingMoncash', JSON.stringify({
-            orderId: result.orderId || orderId,
+            orderId: result.orderId,
+            supabaseOrderId: result.supabaseOrderId || '',
             amount: payload.total_htg,
             customer_email: payload.customer_email
         }));
@@ -849,7 +837,7 @@ async function submitOrder(event) {
                 .eq('id', window.appliedPromo.id);
         }
 
-        window.location.href = result.redirectUrl;
+        window.location.assign(String(result.redirectUrl).trim());
     } catch (err) {
         if (payButton) {
             payButton.disabled = false;

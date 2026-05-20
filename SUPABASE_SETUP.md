@@ -37,6 +37,9 @@ Dans Vercel, ajoutez ces variables dans **Settings > Environment Variables**:
 ```text
 MONCASH_CLIENT_ID=e35354596a4101eb1bec996e4b6dd7a9
 MONCASH_CLIENT_SECRET=votre_client_secret_sandbox
+MONCASH_BUSINESS_KEY=VFRCV1JXVXlXbk5pY2tFOSBYMk5ZY25aTk0wZFJTVVkxYzBWd2JYWnJSME5rUVQwOQ==
+MONCASH_SECRET_API_KEY=MDwwDQYJKoZIhvcNAQEBBQADKwAwKAIhAKccDGZlObWQcB6qFmtyCZfckQCFFLZLB+8fTpYRfTMBAgMBAAE=
+MONCASH_CHECKOUT_BASE_URL=https://sandbox.moncashbutton.digicelgroup.com/Moncash-middleware/Checkout
 SUPABASE_URL=votre_url_supabase
 SUPABASE_KEY=votre_service_role_key_ou_cle_backend
 ```
@@ -195,11 +198,19 @@ Pour suivre les paiements MonCash:
 CREATE TABLE IF NOT EXISTS transactions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   order_id TEXT UNIQUE NOT NULL,
+  supabase_order_id UUID,
   transaction_id TEXT,
   montant NUMERIC,
   statut TEXT DEFAULT 'en_attente',
   created_at TIMESTAMP DEFAULT NOW()
 );
+```
+
+Si `transactions` existe déjà:
+
+```sql
+ALTER TABLE transactions
+ADD COLUMN IF NOT EXISTS supabase_order_id UUID;
 ```
 
 Si RLS est active sur `preorders`, ajoutez au minimum une policy pour permettre aux visiteurs de creer une pre commande:

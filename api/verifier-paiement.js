@@ -69,9 +69,16 @@ export default async function handler(req, res) {
         })
         .eq('order_id', savedOrderId);
 
+      const { data: transaction } = await supabase
+        .from('transactions')
+        .select('supabase_order_id')
+        .eq('order_id', savedOrderId)
+        .maybeSingle();
+
+      const supabaseOrderId = transaction?.supabase_order_id || savedOrderId;
       await supabase.from('orders')
         .update({ status: success ? 'paid' : 'payment_failed' })
-        .eq('id', savedOrderId);
+        .eq('id', supabaseOrderId);
     }
 
     return res.status(200).json({ success, payment });
