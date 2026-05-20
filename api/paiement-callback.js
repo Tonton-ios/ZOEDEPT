@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
 
-const MONCASH_API_BASE_URL = process.env.MONCASH_API_BASE_URL || 'https://sandbox.moncashbutton.digicelgroup.com/Api';
+const MONCASH_API_BASE_URL = (process.env.MONCASH_API_BASE_URL || 'https://moncashbutton.digicelgroup.com/Api').trim();
 
 function getSupabase() {
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+  return createClient(process.env.SUPABASE_URL.trim(), process.env.SUPABASE_KEY.trim());
 }
 
 function moncashPublicKey() {
-  const rawKey = process.env.MONCASH_SECRET_API_KEY;
+  const rawKey = process.env.MONCASH_SECRET_API_KEY?.trim();
   if (!rawKey) return null;
 
   const normalized = rawKey.includes('BEGIN PUBLIC KEY')
@@ -55,7 +55,7 @@ function decryptForMoncash(encryptedValue) {
 }
 
 async function getMoncashToken() {
-  const auth = Buffer.from(`${process.env.MONCASH_CLIENT_ID}:${process.env.MONCASH_CLIENT_SECRET}`).toString('base64');
+  const auth = Buffer.from(`${process.env.MONCASH_CLIENT_ID.trim()}:${process.env.MONCASH_CLIENT_SECRET.trim()}`).toString('base64');
   const tokenRes = await fetch(`${MONCASH_API_BASE_URL}/oauth/token?scope=read,write&grant_type=client_credentials`, {
     method: 'POST',
     headers: {
@@ -73,10 +73,10 @@ async function getMoncashToken() {
 }
 
 async function getTransactionDetails(transactionId) {
-  const businessKey = process.env.MONCASH_BUSINESS_KEY;
+  const businessKey = process.env.MONCASH_BUSINESS_KEY?.trim();
   if (!businessKey) throw new Error('MONCASH_BUSINESS_KEY manquant.');
 
-  const middlewareBaseUrl = process.env.MONCASH_GATEWAY_BASE_URL || 'https://sandbox.moncashbutton.digicelgroup.com/Moncash-middleware';
+  const middlewareBaseUrl = (process.env.MONCASH_GATEWAY_BASE_URL || 'https://moncashbutton.digicelgroup.com/Moncash-middleware').trim();
 
   // Encrypt the transactionId as per Digicel documentation
   const encryptedTransactionId = encryptForMoncash(transactionId);

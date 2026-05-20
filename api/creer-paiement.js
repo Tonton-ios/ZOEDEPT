@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
 
-const MONCASH_API_BASE_URL = process.env.MONCASH_API_BASE_URL || 'https://sandbox.moncashbutton.digicelgroup.com/Api';
-const MONCASH_GATEWAY_BASE_URL = process.env.MONCASH_GATEWAY_BASE_URL || 'https://sandbox.moncashbutton.digicelgroup.com/Moncash-middleware';
-const MONCASH_CHECKOUT_BASE_URL = process.env.MONCASH_CHECKOUT_BASE_URL || 'https://sandbox.moncashbutton.digicelgroup.com/Moncash-middleware/Checkout';
+const MONCASH_API_BASE_URL = (process.env.MONCASH_API_BASE_URL || 'https://moncashbutton.digicelgroup.com/Api').trim();
+const MONCASH_GATEWAY_BASE_URL = (process.env.MONCASH_GATEWAY_BASE_URL || 'https://moncashbutton.digicelgroup.com/Moncash-middleware').trim();
+const MONCASH_CHECKOUT_BASE_URL = (process.env.MONCASH_CHECKOUT_BASE_URL || 'https://moncashbutton.digicelgroup.com/Moncash-middleware/Checkout').trim();
 
 function getSupabase() {
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+  return createClient(process.env.SUPABASE_URL.trim(), process.env.SUPABASE_KEY.trim());
 }
 
 function createMoncashOrderId() {
@@ -86,7 +86,7 @@ async function createMiddlewareCheckoutPayment({ amount, orderId }) {
 }
 
 async function getMoncashToken() {
-  const auth = Buffer.from(`${process.env.MONCASH_CLIENT_ID}:${process.env.MONCASH_CLIENT_SECRET}`).toString('base64');
+  const auth = Buffer.from(`${process.env.MONCASH_CLIENT_ID.trim()}:${process.env.MONCASH_CLIENT_SECRET.trim()}`).toString('base64');
   const tokenRes = await fetch(`${MONCASH_API_BASE_URL}/oauth/token?scope=read,write&grant_type=client_credentials`, {
     method: 'POST',
     headers: {
@@ -111,14 +111,14 @@ export default async function handler(req, res) {
 
   try {
     const missingVars = [];
-    if (!process.env.SUPABASE_URL) missingVars.push('SUPABASE_URL');
-    if (!process.env.SUPABASE_KEY) missingVars.push('SUPABASE_KEY');
+    if (!process.env.SUPABASE_URL?.trim()) missingVars.push('SUPABASE_URL');
+    if (!process.env.SUPABASE_KEY?.trim()) missingVars.push('SUPABASE_KEY');
 
-    const hasRest = process.env.MONCASH_CLIENT_ID && process.env.MONCASH_CLIENT_SECRET;
-    const hasMiddleware = process.env.MONCASH_BUSINESS_KEY && process.env.MONCASH_SECRET_API_KEY;
+    const hasRest = !!(process.env.MONCASH_CLIENT_ID?.trim() && process.env.MONCASH_CLIENT_SECRET?.trim());
+    const hasMiddleware = !!(process.env.MONCASH_BUSINESS_KEY?.trim() && process.env.MONCASH_SECRET_API_KEY?.trim());
 
     if (!hasRest && !hasMiddleware) {
-      missingVars.push('MONCASH_CREDENTIALS');
+      missingVars.push('MONCASH_API_KEYS (REST ou Middleware)');
     }
     
     if (missingVars.length > 0) {
@@ -176,58 +176,52 @@ export default async function handler(req, res) {
     }
 
     const moncashOrderId = createMoncashOrderId();
-
     let redirectUrl = '';
-    let middlewarePayment = null;
-    
-    // On tente le middleware si les clés sont présentes
-    if (hasMiddleware) {
+    let lastError = null;
+
+    // PRIORITÉ 1: Tentative via REST API (Plus stable)
+    if (hasRest) {
       try {
-        middlewarePayment = await createMiddlewareCheckoutPayment({ amount, orderId: moncashOrderId });
+        const accessToken = await getMoncashToken();
+        const payRes = await fetch(`${MONCASH_API_BASE_URL}/v1/CreatePayment`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ amount, orderId: moncashOrderId })
+        });
+
+        const payment = await payRes.json().catch(() => ({}));
+        const token = payment?.payment_token?.token;
+
+        if (payRes.ok && token) {
+          redirectUrl = `${MONCASH_GATEWAY_BASE_URL}/Payment/Redirect?token=${encodeURIComponent(token)}`;
+        } else {
+          lastError = { error: payment?.message || 'REST API Error', step: 'moncash_rest' };
+        }
       } catch (e) {
-        console.error('Middleware attempt failed:', e.message);
+        lastError = { error: e.message, step: 'moncash_rest_exception' };
       }
     }
 
-    // Si le middleware a réussi, on utilise son URL
-    if (middlewarePayment && middlewarePayment.redirectUrl) {
-      redirectUrl = middlewarePayment.redirectUrl;
-    } 
-    // Sinon, si on a les identifiants REST, on utilise la méthode REST (plus fiable)
-    else if (hasRest) {
-      const accessToken = await getMoncashToken();
-      const payRes = await fetch(`${MONCASH_API_BASE_URL}/v1/CreatePayment`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ amount, orderId: moncashOrderId })
-      });
-
-      const paymentText = await payRes.text();
-      let payment;
+    // PRIORITÉ 2: Fallback via Middleware (Si REST a échoué ou n'est pas configuré)
+    if (!redirectUrl && hasMiddleware) {
       try {
-        payment = JSON.parse(paymentText);
-      } catch {
-        payment = { raw: paymentText };
+        const middlewarePayment = await createMiddlewareCheckoutPayment({ amount, orderId: moncashOrderId });
+        if (middlewarePayment?.redirectUrl) {
+          redirectUrl = middlewarePayment.redirectUrl;
+        } else {
+          lastError = middlewarePayment;
+        }
+      } catch (e) {
+        lastError = { error: e.message, step: 'moncash_middleware_exception' };
       }
-      const token = payment?.payment_token?.token;
-      if (!payRes.ok || !token) {
-        return res.status(502).json({
-          error: payment?.message || payment?.error_description || payment?.error || 'Paiement MonCash impossible.',
-          step: 'moncash_create_payment',
-          moncashStatus: payRes.status,
-          moncashResponse: payment
-        });
-      }
+    }
 
-      redirectUrl = `${MONCASH_GATEWAY_BASE_URL}/Payment/Redirect?token=${encodeURIComponent(token)}`;
-    } 
-    // Si aucune méthode n'a fonctionné
-    else {
-      return res.status(502).json(middlewarePayment || { error: "Impossible de générer le lien de paiement." });
+    if (!redirectUrl) {
+      return res.status(502).json(lastError || { error: "Impossible de générer le lien de paiement." });
     }
 
     const { error: dbError } = await supabase.from('transactions').upsert({

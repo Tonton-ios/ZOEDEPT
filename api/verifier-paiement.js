@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-const MONCASH_API_BASE_URL = process.env.MONCASH_API_BASE_URL || 'https://sandbox.moncashbutton.digicelgroup.com/Api';
+const MONCASH_API_BASE_URL = (process.env.MONCASH_API_BASE_URL || 'https://moncashbutton.digicelgroup.com/Api').trim();
 
 function getSupabase() {
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+  return createClient(process.env.SUPABASE_URL.trim(), process.env.SUPABASE_KEY.trim());
 }
 
 async function getMoncashToken() {
-  const auth = Buffer.from(`${process.env.MONCASH_CLIENT_ID}:${process.env.MONCASH_CLIENT_SECRET}`).toString('base64');
+  const auth = Buffer.from(`${process.env.MONCASH_CLIENT_ID.trim()}:${process.env.MONCASH_CLIENT_SECRET.trim()}`).toString('base64');
   const tokenRes = await fetch(`${MONCASH_API_BASE_URL}/oauth/token?scope=read,write&grant_type=client_credentials`, {
     method: 'POST',
     headers: {
@@ -32,10 +32,10 @@ export default async function handler(req, res) {
 
   try {
     const missingVars = [];
-    if (!process.env.MONCASH_CLIENT_ID) missingVars.push('MONCASH_CLIENT_ID');
-    if (!process.env.MONCASH_CLIENT_SECRET) missingVars.push('MONCASH_CLIENT_SECRET');
-    if (!process.env.SUPABASE_URL) missingVars.push('SUPABASE_URL');
-    if (!process.env.SUPABASE_KEY) missingVars.push('SUPABASE_KEY');
+    if (!process.env.MONCASH_CLIENT_ID?.trim()) missingVars.push('MONCASH_CLIENT_ID');
+    if (!process.env.MONCASH_CLIENT_SECRET?.trim()) missingVars.push('MONCASH_CLIENT_SECRET');
+    if (!process.env.SUPABASE_URL?.trim()) missingVars.push('SUPABASE_URL');
+    if (!process.env.SUPABASE_KEY?.trim()) missingVars.push('SUPABASE_KEY');
     
     if (missingVars.length > 0) {
       const missing = missingVars.join(', ');
