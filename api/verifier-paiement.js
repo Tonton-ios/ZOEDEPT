@@ -39,9 +39,8 @@ export default async function handler(req, res) {
     
     if (missingVars.length > 0) {
       const missing = missingVars.join(', ');
-      console.error('Variables manquantes:', missing);
       return res.status(500).json({ 
-        error: `Variables manquantes sur Vercel: ${missing}. Voir VERCEL_SETUP.md pour la configuration.`,
+        error: `Erè: Variables d'environnement manquantes sur Vercel (${missing}).`,
         missing: missingVars
       });
     }

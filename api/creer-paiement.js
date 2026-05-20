@@ -110,22 +110,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    const hasRestCredentials = process.env.MONCASH_CLIENT_ID && process.env.MONCASH_CLIENT_SECRET;
-    const hasMiddlewareCredentials = process.env.MONCASH_BUSINESS_KEY && process.env.MONCASH_SECRET_API_KEY;
-    
     const missingVars = [];
     if (!process.env.SUPABASE_URL) missingVars.push('SUPABASE_URL');
     if (!process.env.SUPABASE_KEY) missingVars.push('SUPABASE_KEY');
-    if (!process.env.MONCASH_CLIENT_ID) missingVars.push('MONCASH_CLIENT_ID');
-    if (!process.env.MONCASH_CLIENT_SECRET) missingVars.push('MONCASH_CLIENT_SECRET');
-    if (!process.env.MONCASH_BUSINESS_KEY) missingVars.push('MONCASH_BUSINESS_KEY');
-    if (!process.env.MONCASH_SECRET_API_KEY) missingVars.push('MONCASH_SECRET_API_KEY');
+
+    const hasRest = process.env.MONCASH_CLIENT_ID && process.env.MONCASH_CLIENT_SECRET;
+    const hasMiddleware = process.env.MONCASH_BUSINESS_KEY && process.env.MONCASH_SECRET_API_KEY;
+
+    if (!hasRest && !hasMiddleware) {
+      missingVars.push('MONCASH_CREDENTIALS');
+    }
     
     if (missingVars.length > 0) {
       const missing = missingVars.join(', ');
-      console.error('Variables manquantes:', missing);
       return res.status(500).json({ 
-        error: `Variables manquantes sur Vercel: ${missing}. Voir VERCEL_SETUP.md pour la configuration.`,
+        error: `Erè: Variables d'environnement manquantes sur Vercel (${missing}).`,
         missing: missingVars
       });
     }
@@ -152,10 +151,10 @@ export default async function handler(req, res) {
           customer_country: orderPayload.customer_country || 'Haiti',
           payment_method: orderPayload.payment_method || 'Mon Cash',
           items: Array.isArray(orderPayload.items) ? orderPayload.items : [],
-          subtotal_htg: orderPayload.subtotal_htg || amount,
-          shipping_htg: orderPayload.shipping_htg || 0,
-          discount_htg: orderPayload.discount_htg || 0,
-          total_htg: orderPayload.total_htg || amount,
+          subtotal: orderPayload.subtotal_htg || amount,
+          shipping: orderPayload.shipping_htg || 0,
+          discount: orderPayload.discount_htg || 0,
+          total: orderPayload.total_htg || amount,
           promo_code: orderPayload.promo_code || null,
           status: 'pending'
         }])
