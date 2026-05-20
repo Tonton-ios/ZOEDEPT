@@ -10,7 +10,7 @@ function getSupabase() {
 }
 
 function createMoncashOrderId() {
-  const seconds = Math.floor(Date.now() / 1000).toString();
+  const seconds = Date.now().toString();
   return seconds.slice(-9) + Math.floor(Math.random() * 10);
 }
 
@@ -46,7 +46,7 @@ function encryptForMoncash(value) {
 }
 
 async function createMiddlewareCheckoutPayment({ amount, orderId }) {
-  const businessKey = process.env.MONCASH_BUSINESS_KEY;
+  const businessKey = process.env.MONCASH_BUSINESS_KEY?.trim();
   if (!businessKey) return null;
 
   const body = new URLSearchParams({
@@ -178,15 +178,23 @@ export default async function handler(req, res) {
     const moncashOrderId = createMoncashOrderId();
 
     let redirectUrl = '';
-    const middlewarePayment = await createMiddlewareCheckoutPayment({ amount, orderId: moncashOrderId });
-
-    if (middlewarePayment?.error) {
-      return res.status(502).json(middlewarePayment);
+    let middlewarePayment = null;
+    
+    // On tente le middleware si les clés sont présentes
+    if (hasMiddleware) {
+      try {
+        middlewarePayment = await createMiddlewareCheckoutPayment({ amount, orderId: moncashOrderId });
+      } catch (e) {
+        console.error('Middleware attempt failed:', e.message);
+      }
     }
 
-    if (middlewarePayment?.redirectUrl) {
+    // Si le middleware a réussi, on utilise son URL
+    if (middlewarePayment && middlewarePayment.redirectUrl) {
       redirectUrl = middlewarePayment.redirectUrl;
-    } else {
+    } 
+    // Sinon, si on a les identifiants REST, on utilise la méthode REST (plus fiable)
+    else if (hasRest) {
       const accessToken = await getMoncashToken();
       const payRes = await fetch(`${MONCASH_API_BASE_URL}/v1/CreatePayment`, {
         method: 'POST',
@@ -216,6 +224,10 @@ export default async function handler(req, res) {
       }
 
       redirectUrl = `${MONCASH_GATEWAY_BASE_URL}/Payment/Redirect?token=${encodeURIComponent(token)}`;
+    } 
+    // Si aucune méthode n'a fonctionné
+    else {
+      return res.status(502).json(middlewarePayment || { error: "Impossible de générer le lien de paiement." });
     }
 
     const { error: dbError } = await supabase.from('transactions').upsert({
