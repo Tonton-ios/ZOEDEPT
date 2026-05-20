@@ -156,15 +156,15 @@ export default async function handler(req, res) {
           customer_country: orderPayload.customer_country || 'Haiti',
           payment_method: orderPayload.payment_method || 'Mon Cash',
           items: Array.isArray(orderPayload.items) ? orderPayload.items : [],
-          // On envoie les deux versions pour être sûr de toucher la bonne colonne (total ou total_htg)
-          subtotal: parseSafeNum(orderPayload.subtotal_htg || orderPayload.subtotal || amount),
-          subtotal_htg: parseSafeNum(orderPayload.subtotal_htg || orderPayload.subtotal || amount),
-          shipping: parseSafeNum(orderPayload.shipping_htg || orderPayload.shipping || 0),
-          shipping_htg: parseSafeNum(orderPayload.shipping_htg || orderPayload.shipping || 0),
-          discount: parseSafeNum(orderPayload.discount_htg || orderPayload.discount || 0),
-          discount_htg: parseSafeNum(orderPayload.discount_htg || orderPayload.discount || 0),
-          total: parseSafeNum(orderPayload.total_htg || orderPayload.total || amount),
-          total_htg: parseSafeNum(orderPayload.total_htg || orderPayload.total || amount),
+          // Correction : Utilisation d'une priorité stricte pour éviter les valeurs null/NaN
+          subtotal: Number(orderPayload.subtotal_htg ?? orderPayload.subtotal ?? amount ?? 0),
+          subtotal_htg: Number(orderPayload.subtotal_htg ?? orderPayload.subtotal ?? amount ?? 0),
+          shipping: Number(orderPayload.shipping_htg ?? orderPayload.shipping ?? 0),
+          shipping_htg: Number(orderPayload.shipping_htg ?? orderPayload.shipping ?? 0),
+          discount: Number(orderPayload.discount_htg ?? orderPayload.discount ?? 0),
+          discount_htg: Number(orderPayload.discount_htg ?? orderPayload.discount ?? 0),
+          total: Number(orderPayload.total_htg ?? orderPayload.total ?? amount ?? 0),
+          total_htg: Number(orderPayload.total_htg ?? orderPayload.total ?? amount ?? 0),
           promo_code: orderPayload.promo_code || null,
           status: 'pending'
         }])
