@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
 
-const MONCASH_API_BASE_URL = (process.env.MONCASH_API_BASE_URL || 'https://moncashbutton.digicelgroup.com/Api').trim();
+const MONCASH_API_BASE_URL = (process.env.MONCASH_API_BASE_URL || 'https://moncashbutton.digicelgroup.com/Api').trim(); // Doit être configuré sur Vercel
 
 function getSupabase() {
   return createClient(process.env.SUPABASE_URL.trim(), process.env.SUPABASE_KEY.trim());
