@@ -10,8 +10,8 @@ function getSupabase() {
 }
 
 function createMoncashOrderId() {
-  const seconds = Date.now().toString();
-  return seconds.slice(-9) + Math.floor(Math.random() * 10);
+  // Utilisation d'un préfixe et d'un timestamp plus long pour garantir l'unicité en production
+  return 'Z' + Date.now().toString().slice(-10) + Math.floor(Math.random() * 1000);
 }
 
 function moncashPublicKey() {
@@ -177,7 +177,7 @@ export default async function handler(req, res) {
 
     const moncashOrderId = createMoncashOrderId();
     let redirectUrl = '';
-    let lastError = null;
+    let apiErrors = [];
 
     // PRIORITÉ 1: Tentative via REST API (Plus stable)
     if (hasRest) {
@@ -199,10 +199,11 @@ export default async function handler(req, res) {
         if (payRes.ok && token) {
           redirectUrl = `${MONCASH_GATEWAY_BASE_URL}/Payment/Redirect?token=${encodeURIComponent(token)}`;
         } else {
-          lastError = { error: payment?.message || 'REST API Error', step: 'moncash_rest' };
+          console.error('MonCash REST Error Response:', payment);
+          apiErrors.push({ error: payment?.message || 'REST API Error', step: 'moncash_rest', details: payment });
         }
       } catch (e) {
-        lastError = { error: e.message, step: 'moncash_rest_exception' };
+        apiErrors.push({ error: e.message, step: 'moncash_rest_exception' });
       }
     }
 
@@ -213,15 +214,19 @@ export default async function handler(req, res) {
         if (middlewarePayment?.redirectUrl) {
           redirectUrl = middlewarePayment.redirectUrl;
         } else {
-          lastError = middlewarePayment;
+          console.error('MonCash Middleware Error Response:', middlewarePayment);
+          apiErrors.push(middlewarePayment);
         }
       } catch (e) {
-        lastError = { error: e.message, step: 'moncash_middleware_exception' };
+        apiErrors.push({ error: e.message, step: 'moncash_middleware_exception' });
       }
     }
 
     if (!redirectUrl) {
-      return res.status(502).json(lastError || { error: "Impossible de générer le lien de paiement." });
+      return res.status(502).json({ 
+        error: "MonCash rejette la transaction (System Error). Vérifiez vos clés de production et le montant.",
+        details: apiErrors 
+      });
     }
 
     const { error: dbError } = await supabase.from('transactions').upsert({
