@@ -31,8 +31,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    if (!process.env.MONCASH_CLIENT_ID || !process.env.MONCASH_CLIENT_SECRET || !process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
-      return res.status(500).json({ error: 'Variables MonCash/Supabase manquantes sur Vercel.' });
+    const missingVars = [];
+    if (!process.env.MONCASH_CLIENT_ID) missingVars.push('MONCASH_CLIENT_ID');
+    if (!process.env.MONCASH_CLIENT_SECRET) missingVars.push('MONCASH_CLIENT_SECRET');
+    if (!process.env.SUPABASE_URL) missingVars.push('SUPABASE_URL');
+    if (!process.env.SUPABASE_KEY) missingVars.push('SUPABASE_KEY');
+    
+    if (missingVars.length > 0) {
+      const missing = missingVars.join(', ');
+      console.error('Variables manquantes:', missing);
+      return res.status(500).json({ 
+        error: `Variables manquantes sur Vercel: ${missing}. Voir VERCEL_SETUP.md pour la configuration.`,
+        missing: missingVars
+      });
     }
 
     const transactionId = req.query.transactionId || req.query.transaction_id;

@@ -112,8 +112,22 @@ export default async function handler(req, res) {
   try {
     const hasRestCredentials = process.env.MONCASH_CLIENT_ID && process.env.MONCASH_CLIENT_SECRET;
     const hasMiddlewareCredentials = process.env.MONCASH_BUSINESS_KEY && process.env.MONCASH_SECRET_API_KEY;
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY || (!hasRestCredentials && !hasMiddlewareCredentials)) {
-      return res.status(500).json({ error: 'Variables MonCash/Supabase manquantes sur Vercel.' });
+    
+    const missingVars = [];
+    if (!process.env.SUPABASE_URL) missingVars.push('SUPABASE_URL');
+    if (!process.env.SUPABASE_KEY) missingVars.push('SUPABASE_KEY');
+    if (!process.env.MONCASH_CLIENT_ID) missingVars.push('MONCASH_CLIENT_ID');
+    if (!process.env.MONCASH_CLIENT_SECRET) missingVars.push('MONCASH_CLIENT_SECRET');
+    if (!process.env.MONCASH_BUSINESS_KEY) missingVars.push('MONCASH_BUSINESS_KEY');
+    if (!process.env.MONCASH_SECRET_API_KEY) missingVars.push('MONCASH_SECRET_API_KEY');
+    
+    if (missingVars.length > 0) {
+      const missing = missingVars.join(', ');
+      console.error('Variables manquantes:', missing);
+      return res.status(500).json({ 
+        error: `Variables manquantes sur Vercel: ${missing}. Voir VERCEL_SETUP.md pour la configuration.`,
+        missing: missingVars
+      });
     }
 
     const amount = Math.round(Number(req.body?.amount || 0));
