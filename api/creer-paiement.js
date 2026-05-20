@@ -117,8 +117,11 @@ export default async function handler(req, res) {
     const hasRest = !!(process.env.MONCASH_CLIENT_ID?.trim() && process.env.MONCASH_CLIENT_SECRET?.trim());
     const hasMiddleware = !!(process.env.MONCASH_BUSINESS_KEY?.trim() && process.env.MONCASH_SECRET_API_KEY?.trim());
 
+    console.log(`Diagnostic: REST=${hasRest}, Middleware=${hasMiddleware}`);
+    console.log(`URL utilisée: ${MONCASH_API_BASE_URL}`);
+
     if (!hasRest && !hasMiddleware) {
-      missingVars.push('MONCASH_API_KEYS (REST ou Middleware)');
+      missingVars.push('MONCASH_CLIENT_ID/SECRET ou BUSINESS_KEY');
     }
     
     if (missingVars.length > 0) {
@@ -182,6 +185,7 @@ export default async function handler(req, res) {
     // PRIORITÉ 1: Tentative via REST API (Plus stable)
     if (hasRest) {
       try {
+        console.log('Tentative de paiement via REST API...');
         const accessToken = await getMoncashToken();
         const payRes = await fetch(`${MONCASH_API_BASE_URL}/v1/CreatePayment`, {
           method: 'POST',
@@ -197,12 +201,15 @@ export default async function handler(req, res) {
         const token = payment?.payment_token?.token;
 
         if (payRes.ok && token) {
+          console.log('Succès REST API: Token généré.');
           redirectUrl = `${MONCASH_GATEWAY_BASE_URL}/Payment/Redirect?token=${encodeURIComponent(token)}`;
         } else {
-          console.error('MonCash REST Error Response:', payment);
-          apiErrors.push({ error: payment?.message || 'REST API Error', step: 'moncash_rest', details: payment });
+          const errorMsg = payment?.message || payment?.error_description || 'Erreur inconnue';
+          console.error('Échec REST API:', errorMsg);
+          apiErrors.push({ error: errorMsg, step: 'moncash_rest', details: payment });
         }
       } catch (e) {
+        console.error('Exception REST API:', e.message);
         apiErrors.push({ error: e.message, step: 'moncash_rest_exception' });
       }
     }
@@ -210,6 +217,7 @@ export default async function handler(req, res) {
     // PRIORITÉ 2: Fallback via Middleware (Si REST a échoué ou n'est pas configuré)
     if (!redirectUrl && hasMiddleware) {
       try {
+        console.log('Tentative de secours via Middleware...');
         const middlewarePayment = await createMiddlewareCheckoutPayment({ amount, orderId: moncashOrderId });
         if (middlewarePayment?.redirectUrl) {
           redirectUrl = middlewarePayment.redirectUrl;
