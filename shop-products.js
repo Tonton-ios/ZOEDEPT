@@ -127,14 +127,6 @@ function productVariants(product) {
         if (parsedVariants.length) return parsedVariants;
     }
 
-    if (Array.isArray(product.colors) && product.colors.length) {
-        return product.colors.map(color => ({ color, image: product.image_url }));
-    }
-
-    return [];
-}
-
-function productSizes(product) {
     if (Array.isArray(product.sizes)) return product.sizes.filter(Boolean);
     if (typeof product.sizes === 'string') {
         return product.sizes.split(',').map(size => size.trim()).filter(Boolean);
