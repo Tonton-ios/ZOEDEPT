@@ -436,7 +436,11 @@ p {
     min-height: 0;
     border: 0;
     background-position: center;
-    background-size: cover;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color: var(--white);
+    image-rendering: -webkit-optimize-contrast;
+    backface-visibility: hidden;
     transition: transform .35s ease;
     cursor: pointer;
 }
@@ -641,10 +645,11 @@ p {
     width: 100%;
     aspect-ratio: 4 / 5;
     display: block;
-    object-fit: cover;
+    object-fit: contain;
     border: 1px solid var(--line);
+    image-rendering: -webkit-optimize-contrast;
     border-radius: var(--radius);
-    background: var(--offwhite);
+    background: var(--white);
 }
 
 .product-detail-media figcaption {
@@ -804,7 +809,9 @@ p {
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background-position: center;
-    background-size: cover;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color: var(--white);
 }
 
 .related-product-mini strong,
@@ -866,10 +873,10 @@ p {
 .drawer-product img {
     width: 86px;
     aspect-ratio: 4 / 5;
-    object-fit: cover;
+    object-fit: contain;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: var(--offwhite);
+    background: var(--white);
 }
 
 .qty-stepper {
@@ -1682,7 +1689,9 @@ p {
     height: clamp(300px, 30vw, 400px);
     flex-shrink: 0;
     border-radius: var(--radius);
-    background-size: cover;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color: var(--white);
     background-position: center;
     border: 1px solid var(--line);
 }
@@ -2168,7 +2177,7 @@ p {
     object-fit: cover;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: var(--offwhite);
+    background: var(--white);
 }
 
 .image-preview-grid figcaption {

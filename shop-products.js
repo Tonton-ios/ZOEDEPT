@@ -21,6 +21,7 @@ let allShopProducts = [];
 let currentProductMap = new Map();
 let activeBuyItem = null;
 const USD_RATE = 132;
+const WHATSAPP_BUSINESS_NUMBER = '50937402026'; // Nimewo WhatsApp ekip ZOE DEPT.
 
 function zoeEscape(value = '') {
     return String(value)
@@ -44,6 +45,14 @@ function productBelongsTo(product, category) {
     if (category === 'tout-net') return true;
     if (category === 'fek-paret' && product.is_latest) return true;
     return productCategories(product).includes(category);
+}
+
+function isGalleryItem(product) {
+    return productCategories(product).includes('galri');
+}
+
+function isOutOfStock(product) {
+    return product.stock_quantity !== null && typeof product.stock_quantity === 'number' && product.stock_quantity <= 0;
 }
 
 function productMetaValue(product, label) {
@@ -77,7 +86,7 @@ function preorderNote(product) {
 
 function formatHTG(value) {
     if (!value) return '';
-    return `${Number(value).toLocaleString('fr-FR')} GDS`;
+    return `${Number(value).toLocaleString('fr-FR')} HTG`;
 }
 
 function formatUSD(value) {
@@ -156,10 +165,28 @@ function productSearchText(product) {
 }
 
 function productCard(product) {
+    const isGallery = isGalleryItem(product);
+    
+    if (isGallery) {
+        return `
+            <article class="product-card gallery-session-card">
+                <button class="product-image product-image-button product-detail-trigger" type="button" data-product-id="${zoeEscape(product.id)}" style="background-image: url('${zoeEscape(product.image_url)}')" aria-label="Wè sesyon ${zoeEscape(product.name)}"></button>
+                <div class="product-info gallery-info">
+                    <p class="product-kicker" style="text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.7rem; opacity: 0.6; margin-bottom: 0.5rem;">SESYON FOTO / LOOKBOOK</p>
+                    <h3 style="font-family: serif; font-size: 1.4rem;">${zoeEscape(product.name)}</h3>
+                    <div class="product-bottom" style="margin-top: 1.5rem;">
+                        <button class="btn light btn-full product-detail-trigger" type="button" data-product-id="${zoeEscape(product.id)}">GADE GALRI A</button>
+                    </div>
+                </div>
+            </article>
+        `;
+    }
+
     const variants = productVariants(product);
     const sizes = productSizes(product);
     const priceHTG = formatHTG(product.price_htg);
     const priceUSD = formatUSD(product.price_usd);
+    const outOfStock = isOutOfStock(product);
     const category = ZOE_SHOP_CATEGORIES.find(item => productBelongsTo(product, item.slug));
     const preorder = isPreorder(product);
     const swatches = variants.map((variant, index) => `
@@ -186,24 +213,26 @@ function productCard(product) {
         <article class="product-card dynamic-product-card">
             <button class="product-image product-image-button product-detail-trigger" type="button" data-product-id="${zoeEscape(product.id)}" style="background-image: url('${zoeEscape(product.image_url)}')" aria-label="${zoeEscape(product.name)}"></button>
             <div class="product-info">
-                <p class="product-kicker">${zoeEscape(product.collection || category?.label || 'ZOE DEPT.')}</p>
+                <p class="product-kicker" style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; opacity: 0.7; margin-bottom: 0.5rem;">${zoeEscape(product.collection || category?.label || 'ZOE DEPT.')}</p>
                 <h3>${zoeEscape(product.name)}</h3>
-                <p class="product-description">${zoeEscape(cleanDescription(product))}</p>
                 ${swatches ? `<div class="color-swatch-row">${swatches}</div>` : ''}
                 ${sizeButtons ? `<div class="size-choice-row">${sizeButtons}</div>` : ''}
                 <div class="product-bottom">
                     <div class="price-toggle">
-                        <strong data-price-mode="htg">${priceHTG || priceUSD}</strong>
+                        <span class="price-label" style="font-family: serif; font-size: 1.1rem;">
+                            <strong data-price-mode="htg">${priceHTG || priceUSD}</strong>
+                        </span>
                         ${priceUSD && priceHTG ? `<button class="currency-toggle" type="button" data-htg="${zoeEscape(priceHTG)}" data-usd="${zoeEscape(priceUSD)}" aria-label="Wè pri an dola">⌄</button>` : ''}
                     </div>
                     <button
-                        class="btn ${preorder ? 'dark preorder-trigger' : 'light'} product-cta"
+                        class="btn ${(preorder || outOfStock) ? 'dark preorder-trigger' : 'dark'} product-cta"
                         type="button"
                         data-product-id="${zoeEscape(product.id)}">
-                        ${preorder ? 'Pre Komand' : 'Achte kounya'}
+                        REZEVE
                     </button>
                 </div>
                 ${preorder ? `<p class="preorder-card-note">${zoeEscape(preorderReadyText(product))}</p>` : ''}
+                ${outOfStock ? `<p class="out-of-stock-note" style="color: #cc0000; font-size: 0.75rem; margin-top: 0.5rem; font-weight: bold;">⚠️ Pa gen an stock kounye a</p>` : ''}
             </div>
         </article>
     `;
@@ -275,22 +304,22 @@ function ensureProductModal() {
                         <figcaption>Devan</figcaption>
                     </figure>
                     <figure>
-                        <img id="productModalBack" alt="Dos pwodwi a">
-                        <figcaption>Dos</figcaption>
+                        <img id="productModalBack" alt="Dèyè pwodwi a">
+                        <figcaption>Dèyè</figcaption>
                     </figure>
                 </div>
                 <div class="product-detail-copy">
-                    <p class="eyebrow" id="productModalKicker">ZOE DEPT.</p>
-                    <h2 id="productModalTitle"></h2>
-                    <p id="productModalDescription"></p>
+                    <p class="eyebrow" id="productModalKicker" style="text-transform: uppercase; letter-spacing: 0.2em;"></p>
+                    <h2 id="productModalTitle" style="font-family: serif; font-size: 2rem; margin-bottom: 1rem;"></h2>
+                    <p id="productModalDescription" style="line-height: 1.6; opacity: 0.8; margin-bottom: 2rem;"></p>
                     <div id="productModalMeta" class="product-modal-meta"></div>
-                    <button class="btn dark btn-full" type="button" id="productModalCta">Achte kounya</button>
+                    <button class="btn dark btn-full" type="button" id="productModalCta" style="letter-spacing: 0.1em;">REZEVE</button>
                 </div>
                 <section class="related-products-section">
                     <div class="category-section-head">
                         <div>
-                            <p class="eyebrow">Ou ka renmen</p>
-                            <h2>Ou ka renmen tou</h2>
+                            <p class="eyebrow">SELEKSYON</p>
+                            <h2 style="font-family: serif;">Lòt pyès ki ka enterese ou</h2>
                         </div>
                     </div>
                     <div class="related-products-grid" id="relatedProductsGrid"></div>
@@ -299,7 +328,7 @@ function ensureProductModal() {
         </div>
     `);
 
-    document.querySelector('.product-modal-close').addEventListener('click', closeProductModal);
+    document.querySelector('#productModal .product-modal-close').addEventListener('click', closeProductModal);
     document.getElementById('productModal').addEventListener('click', event => {
         if (event.target.id === 'productModal') closeProductModal();
     });
@@ -314,7 +343,30 @@ function closeProductModal() {
 
 function openProductModal(product) {
     ensureProductModal();
+    const isGallery = isGalleryItem(product);
+    const outOfStock = isOutOfStock(product);
+    const preorder = isPreorder(product);
     window.currentModalProduct = product;
+    
+    if (isGallery) {
+        document.getElementById('productModalKicker').textContent = 'GALRI / SESYON';
+        document.getElementById('productModalTitle').textContent = product.name;
+        document.getElementById('productModalDescription').textContent = cleanDescription(product);
+        document.getElementById('productModalFront').src = product.image_url;
+        document.getElementById('productModalBack').src = product.back_image_url || product.image_url;
+        document.getElementById('productModalMeta').innerHTML = `
+            <div class="gallery-context" style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <p style="font-style: italic; opacity: 0.7;">Sesyon Atistik ZOE DEPT. Tout dwa rezève.</p>
+            </div>
+        `;
+        const modalCta = document.getElementById('productModalCta');
+        modalCta.style.display = 'none'; // Pas de bouton d'achat pour la galerie
+        renderRelatedProducts(product);
+        document.getElementById('productModal').classList.add('active');
+        return;
+    }
+
+    document.getElementById('productModalCta').style.display = 'block';
     const variants = productVariants(product);
     const sizes = productSizes(product);
     window.currentModalSelection = {
@@ -347,13 +399,15 @@ function openProductModal(product) {
     `).join('');
 
     document.getElementById('productModalMeta').innerHTML = `
-        <p><strong>Pri:</strong> ${zoeEscape(formatHTG(product.price_htg) || formatUSD(product.price_usd) || '-')}</p>
-        ${sizeButtons ? `<div class="modal-option-group"><strong>Size</strong><div class="modal-option-row">${sizeButtons}</div></div>` : '<p><strong>Size:</strong> -</p>'}
-        ${colorButtons ? `<div class="modal-option-group"><strong>Koulè</strong><div class="modal-option-row">${colorButtons}</div></div>` : '<p><strong>Koulè:</strong> -</p>'}
-        <p><strong>Estati:</strong> ${isPreorder(product) ? 'Pre Komand' : product.is_available ? 'An Stock' : 'Pa Disponib'}</p>
-        ${product.material ? `<p><strong>Materyèl:</strong> ${zoeEscape(product.material)}</p>` : ''}
-        ${product.fit ? `<p><strong>Koupe:</strong> ${zoeEscape(product.fit)}</p>` : ''}
-        ${product.care ? `<p><strong>Antretyen:</strong> ${zoeEscape(product.care)}</p>` : ''}
+        <div class="modal-price-tag" style="font-size: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">${zoeEscape(formatHTG(product.price_htg) || formatUSD(product.price_usd) || '-')}</div>
+        ${sizeButtons ? `<div class="modal-option-group"><label style="text-transform: uppercase; font-size: 0.7rem; font-weight: bold;">Chwazi Size</label><div class="modal-option-row">${sizeButtons}</div></div>` : ''}
+        ${colorButtons ? `<div class="modal-option-group"><label style="text-transform: uppercase; font-size: 0.7rem; font-weight: bold;">Chwazi Koulè</label><div class="modal-option-row">${colorButtons}</div></div>` : ''}
+        ${outOfStock ? `<p style="color: #cc0000; font-weight: bold; margin-bottom: 1rem;">⚠️ PA GEN AN STOCK KOUNYE A</p>` : ''}
+        <div class="product-details-luxury" style="margin: 2rem 0; font-size: 0.9rem;">
+            ${product.material ? `<p style="margin-bottom: 0.5rem;"><span style="opacity: 0.5;">Materyèl:</span> ${zoeEscape(product.material)}</p>` : ''}
+            ${product.fit ? `<p style="margin-bottom: 0.5rem;"><span style="opacity: 0.5;">Koupe:</span> ${zoeEscape(product.fit)}</p>` : ''}
+            <p style="margin-bottom: 0.5rem;"><span style="opacity: 0.5;">Estati:</span> ${preorder ? 'Eksklizivite (Pre Komand)' : 'Disponib kounye a'}</p>
+        </div>
     `;
     document.querySelectorAll('.modal-color-choice').forEach(button => {
         button.addEventListener('click', () => {
@@ -372,11 +426,11 @@ function openProductModal(product) {
         });
     });
     const modalCta = document.getElementById('productModalCta');
-    modalCta.textContent = isPreorder(product) ? 'Pre Komand' : 'Achte kounya';
+    modalCta.textContent = (preorder || outOfStock) ? 'REZEVE PLAS OU' : 'REZEVE KOUNYE A';
     modalCta.onclick = () => {
         const detailSize = window.currentModalSelection?.size || productSizes(product)[0] || '';
         const detailColor = window.currentModalSelection?.color || productVariants(product)[0]?.color || '';
-        if (isPreorder(product)) {
+        if (preorder || outOfStock) {
             window.currentPreorderSize = detailSize;
             window.currentPreorderColor = detailColor;
             openPreorderModal(product);
@@ -421,12 +475,12 @@ function ensureBuyDrawer() {
     document.body.insertAdjacentHTML('beforeend', `
         <aside class="buy-drawer" id="buyDrawer" aria-hidden="true">
             <div class="buy-drawer-head">
-                <h2>Achte kounya</h2>
+                <h2 style="font-family: serif; text-transform: uppercase; font-size: 1.2rem;">Sa ou chwazi</h2>
                 <button class="drawer-close" type="button" aria-label="Fèmen">×</button>
             </div>
             <div id="buyDrawerBody"></div>
-            <div class="buy-drawer-total">
-                <span>Total</span>
+            <div class="buy-drawer-total" style="border-top: 1px solid #000; padding-top: 1.5rem;">
+                <span style="text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em;">Sou-total HTG</span>
                 <strong id="buyDrawerTotal">0 GDS</strong>
             </div>
             <button class="btn dark btn-full" type="button" id="openCheckoutBtn">Peye kounya</button>
@@ -475,11 +529,11 @@ function renderBuyDrawer() {
     const { product, size, color, quantity } = activeBuyItem;
     const total = orderSubtotalHTG();
     document.getElementById('buyDrawerBody').innerHTML = `
-        <div class="drawer-product">
+        <div class="drawer-product" style="display: flex; gap: 1.5rem; align-items: flex-start;">
             <img src="${zoeEscape(product.image_url)}" alt="${zoeEscape(product.name)}">
             <div>
-                <h3>${zoeEscape(product.name)}</h3>
-                <p>${zoeEscape(formatHTG(product.price_htg))}</p>
+                <h3 style="font-family: serif; margin-bottom: 0.25rem;">${zoeEscape(product.name)}</h3>
+                <p style="font-weight: bold; margin-bottom: 0.5rem;">${zoeEscape(formatHTG(product.price_htg))}</p>
                 <small>Size: ${zoeEscape(size || '-')} | Koulè: ${zoeEscape(color || '-')}</small>
             </div>
         </div>
@@ -610,14 +664,14 @@ function ensureCheckout() {
     document.body.insertAdjacentHTML('beforeend', `
         <section class="checkout-overlay" id="checkoutOverlay" aria-hidden="true">
             <div class="checkout-layout">
-                <form class="checkout-form" id="checkoutForm">
+                <form class="checkout-form" id="checkoutForm" style="padding: 3rem;">
                     <button class="checkout-close" type="button" aria-label="Fèmen">×</button>
-                    <h2>Peye kounya</h2>
+                    <h2 style="font-family: serif; font-size: 2.5rem; margin-bottom: 2rem;">Finalize Kòmand la</h2>
                     <div class="checkout-block">
-                        <h3>Contact</h3>
+                        <h3 style="text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1.5rem;">Enfòmasyon pou Kontakte ou</h3>
                         <div class="form-group">
                             <label for="checkoutEmail">Imèl</label>
-                            <input type="email" id="checkoutEmail" required>
+                            <input type="email" id="checkoutEmail" required placeholder="example@domain.com">
                         </div>
                     </div>
                     <div class="checkout-block">
@@ -648,39 +702,30 @@ function ensureCheckout() {
                         </div>
                         <label class="delivery-check">
                             <input type="checkbox" id="localDelivery">
-                            <span>Si kliyan an nan PV oswa Delmas, livrezon an se 700 GDS. Deyò PV/Delmas oswa lòt peyi, ekip ZOE DEPT ap kontakte kliyan an.</span>
+                            <span style="font-size: 0.85rem; opacity: 0.7;">Livrezon Premium PV / Delmas (700 HTG)</span>
                         </label>
                         <div class="form-group">
                             <label for="checkoutPhone">Nimewo telefòn</label>
                             <input type="tel" id="checkoutPhone" required>
                         </div>
                     </div>
-                    <div class="checkout-block">
-                        <h3>Metòd livrezon</h3>
-                        <p>Livrezon nan zòn ki toupre yo ka fèt menm jou a oswa 2 jou apre. Pou lòt zòn oswa lòt peyi, ekip ZOE DEPT ap kontakte kliyan an.</p>
+                    <div class="checkout-block" style="background: #f9f9f9; padding: 1.5rem; border-radius: 4px;">
+                        <h3 style="font-size: 0.9rem;">Sèvis Konsyèj</h3>
+                        <p style="font-size: 0.8rem; line-height: 1.5;">Lè ou fin valide, kòmand ou an ap voye bay ekip nou an sou WhatsApp pou nou finalize peman ak livrezon an ansanm.</p>
                     </div>
-                    <div class="checkout-block">
-                        <h3>Payement</h3>
-                        <p class="secure-note">Tout transaksyon yo sekirize e kripté.</p>
-                        <div class="payment-options">
-                            <label><input type="radio" name="paymentMethod" value="Mon Cash" checked> Mon Cash</label>
-                            <label><input type="radio" name="paymentMethod" value="Natcash"> Natcash</label>
-                            <label><input type="radio" name="paymentMethod" value="PayPal"> PayPal</label>
-                        </div>
-                    </div>
-                    <button class="btn dark btn-full" type="submit">Peye kounya</button>
+                    <button class="btn dark btn-full" type="submit" style="height: 4rem; font-size: 1rem; letter-spacing: 0.2em;">KONFIME KÒMAND MWEN</button>
                 </form>
-                <aside class="checkout-summary">
+                <aside class="checkout-summary" style="background: #fff; border-left: 1px solid #eee;">
                     <div id="checkoutProductSummary"></div>
                     <div class="promo-row">
                         <input type="text" id="promoInput" placeholder="Kòd promo">
                         <button class="btn light" type="button" id="applyPromoBtn">Aplike kounya</button>
                     </div>
-                    <div class="summary-lines">
+                    <div class="summary-lines" style="border-top: 1px solid #eee; padding-top: 2rem;">
                         <p><span>Subtotal</span><strong id="summarySubtotal">0 GDS</strong></p>
-                        <p><span>Shipping</span><strong id="summaryShipping">0 GDS</strong></p>
-                        <p><span>Total</span><strong id="summaryTotal">0 GDS</strong></p>
-                        <small id="summaryUsd">USD: $0</small>
+                        <p><span>Livrezon</span><strong id="summaryShipping">0 GDS</strong></p>
+                        <p style="font-size: 1.25rem; margin-top: 1rem;"><span>TOTAL</span><strong id="summaryTotal">0 GDS</strong></p>
+                        <small id="summaryUsd" style="opacity: 0.5;">Valè an USD: $0</small>
                     </div>
                 </aside>
             </div>
@@ -782,7 +827,7 @@ async function submitOrder(event) {
         customer_last_name: document.getElementById('checkoutLastName').value.trim(),
         customer_address: document.getElementById('checkoutAddress').value.trim(),
         customer_country: document.getElementById('checkoutCountry').value,
-        payment_method: document.querySelector('input[name="paymentMethod"]:checked')?.value || 'Mon Cash',
+        payment_method: 'WhatsApp',
         items: [item],
         subtotal_htg: orderSubtotalHTG(),
         shipping_htg: checkoutShippingHTG(),
@@ -792,15 +837,10 @@ async function submitOrder(event) {
         promo_code: window.appliedPromo?.code || null
     };
 
-    if (payload.payment_method !== 'Mon Cash') {
-        alert(`${payload.payment_method} poko konekte. Chwazi Mon Cash pou peye kounye a.`);
-        return;
-    }
-
     const payButton = event.submitter || document.querySelector('#checkoutForm button[type="submit"]');
     if (payButton) {
         payButton.disabled = true;
-        payButton.textContent = 'Ap prepare paiement...';
+        payButton.textContent = 'Ap prepare invoice WhatsApp...';
     }
 
     const finalAmount = Math.round(Number(payload.total_htg || 0));
@@ -810,33 +850,25 @@ async function submitOrder(event) {
         return;
     }
 
-    const savedOrder = { ...payload };
     try {
-        const response = await fetch('/api/creer-paiement', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                amount: finalAmount,
-                order: savedOrder
-            })
-        });
-        const result = await response.json();
-        if (!response.ok || !result.redirectUrl) {
-            console.error('MonCash API error:', result);
-            const detail = result.step ? `${result.error || 'MonCash pa disponib'} (${result.step})` : result.error;
-            throw new Error(detail || 'MonCash pa disponib pou kounye a.');
+        // 1. Enregistre commande dans Supabase
+        const { data: createdOrder, error: orderError } = await window.supabaseHelpers.supabase
+            .from('orders')
+            .insert([payload])
+            .select()
+            .single();
+
+        if (orderError) throw orderError;
+
+        // 2. Dekremente stock la nan baz de done a si se pa yon pre-order
+        if (typeof activeBuyItem.product.stock_quantity === 'number' && !isPreorder(activeBuyItem.product)) {
+            await window.supabaseHelpers.supabase
+                .from('products')
+                .update({ stock_quantity: Math.max(0, activeBuyItem.product.stock_quantity - activeBuyItem.quantity) })
+                .eq('id', activeBuyItem.product.id);
         }
 
-        savedOrder.id = result.orderId;
-        savedOrder.supabase_order_id = result.supabaseOrderId || '';
-        localStorage.setItem('zoeLastOrder', JSON.stringify(savedOrder));
-        localStorage.setItem('zoePendingMoncash', JSON.stringify({
-            orderId: result.orderId,
-            supabaseOrderId: result.supabaseOrderId || '',
-            amount: payload.total_htg,
-            customer_email: payload.customer_email
-        }));
-
+        // 3. Mise à jour du compteur promo si nécessaire
         if (window.appliedPromo) {
             await window.supabaseHelpers.supabase
                 .from('promo_codes')
@@ -844,13 +876,51 @@ async function submitOrder(event) {
                 .eq('id', window.appliedPromo.id);
         }
 
-        window.location.assign(String(result.redirectUrl).trim());
+        // 3. Préparer l'invoice pour WhatsApp
+        const orderIdShort = createdOrder.id.split('-')[0].toUpperCase();
+        const orderDate = new Date().toLocaleString('fr-FR');
+        
+        let invoiceText = `✨ *KÒMAND PWODWI - ZOE DEPT. EKSKLIZIV*\n`;
+        invoiceText += `💎 _Sèvis Konsyèj sou Entènèt_\n`;
+        invoiceText += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        invoiceText += `*REFERANS :* #${orderIdShort}\n`;
+        invoiceText += `*DAT :* ${orderDate}\n\n`;
+        
+        invoiceText += `🏛️ *ENFÒMASYON KLIYAN :*\n`;
+        invoiceText += `• ${payload.customer_first_name} ${payload.customer_last_name}\n`;
+        invoiceText += `• ${payload.customer_phone}\n`;
+        invoiceText += `• ${payload.customer_address}, ${payload.customer_country}\n\n`;
+        
+        invoiceText += `📦 *SA OU CHWAZI :*\n`;
+        payload.items.forEach(item => {
+            invoiceText += `> *${item.name.toUpperCase()}*\n`;
+            invoiceText += `  Size: ${item.size} | Koulè: ${item.color}\n`;
+            invoiceText += `  Kantite: ${item.quantity} | ${formatHTG(item.unit_htg)}\n`;
+        });
+        
+        invoiceText += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        invoiceText += `*SOU-TOTAL :* ${formatHTG(payload.subtotal_htg)}\n`;
+        invoiceText += `*LIVREZON :* ${payload.shipping_htg > 0 ? formatHTG(payload.shipping_htg) : 'N ap konfime livrezon an'}\n`;
+        if (payload.discount_htg > 0) {
+            invoiceText += `*RABÈ (${payload.promo_code}) :* -${formatHTG(payload.discount_htg)}\n`;
+        }
+        invoiceText += `\n💰 *MONTAN TOTAL :* *${formatHTG(payload.total_htg)}*\n`;
+        invoiceText += `━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        invoiceText += `Bonjou ZOE DEPT., mwen vle konfime kòmand sa yo. Silvouplè gide m pou m finalize sa.`;
+
+        // 4. Générer le lien WhatsApp et rediriger
+        const waUrl = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(invoiceText)}`;
+        
+        localStorage.setItem('zoeLastOrder', JSON.stringify(createdOrder));
+        
+        window.location.assign(waUrl);
+
     } catch (err) {
         if (payButton) {
             payButton.disabled = false;
             payButton.textContent = 'Peye kounya';
         }
-        alert('Erè MonCash: ' + err.message);
+        alert('Yon erè rive pandan kreyasyon kòmand la: ' + err.message);
     }
 }
 

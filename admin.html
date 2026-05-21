@@ -48,8 +48,12 @@
                     <span class="stat-value" id="liveViews">0</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Sante Sèvè a</span>
-                    <span class="stat-value server-good" id="serverStatus">Bon</span>
+                    <span class="stat-label">Pwodwi ki Fini</span>
+                    <span class="stat-value server-error" id="outOfStockCount">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Pre-Komand Aktif</span>
+                    <span class="stat-value" id="preorderCount">0</span>
                 </div>
                 <div class="stat-card clickable" onclick="toggleOrders()">
                     <span class="stat-label">Kantite Kòmand</span>
@@ -132,7 +136,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="prodStock">Kantite Stock</label>
-                                    <input type="number" id="prodStock" min="0" placeholder="ex: 12">
+                                    <input type="number" id="prodStock" min="0" placeholder="0 pou li di li fini">
                                 </div>
                             </div>
                         </fieldset>
@@ -191,7 +195,7 @@
                                 <div class="card-header">
                                     <div>
                                         <span class="admin-kicker">Variant Koulè</span>
-                                        <h3>Koulè ak imaj</h3>
+                                        <h3>Imaj Sesyon / Koulè</h3>
                                     </div>
                                     <button type="button" class="btn light btn-compact" id="addColorVariant">Ajoute koulè</button>
                                 </div>
@@ -262,13 +266,17 @@
                             <span class="admin-kicker">Envantè</span>
                             <h2>Envantè Pwodwi</h2>
                         </div>
-                        <button class="btn-refresh" onclick="loadAdminData()" title="Rafrechi" aria-label="Rafrechi">↻</button>
+                        <div class="header-tools">
+                            <input type="text" id="adminProductSearch" placeholder="Chache yon pwodwi..." class="admin-search-input" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; margin-right: 1rem;">
+                            <button class="btn-refresh" onclick="loadAdminData()" title="Rafrechi" aria-label="Rafrechi">↻</button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table class="admin-table">
                             <thead>
                                 <tr>
                                     <th>Pwodwi</th>
+                                    <th>Stock</th>
                                     <th>Kategori</th>
                                     <th>Pri</th>
                                     <th>Estati</th>
@@ -335,7 +343,7 @@
                                 <th>ID Kòmand</th>
                                 <th>Kliyan</th>
                                 <th>Total</th>
-                                <th>Estati</th>
+                                <th style="width: 150px;">Estati</th>
                             </tr>
                         </thead>
                         <tbody id="ordersList"></tbody>
@@ -378,7 +386,7 @@
             'material',
             'fit',
             'care',
-            'stock_qty',
+            'stock_quantity',
             'compare_at_usd',
             'is_latest',
             'is_featured',
@@ -429,6 +437,10 @@
             const selected = [...document.querySelectorAll('input[name="prodCategories"]:checked')]
                 .map(input => input.value);
             return [...new Set(selected)];
+        }
+
+        function isProductOutOfStock(product) {
+            return product.stock_quantity !== null && typeof product.stock_quantity === 'number' && product.stock_quantity <= 0;
         }
 
         function getProductCategories(product) {
@@ -530,6 +542,18 @@
             syncColorInput();
         }
 
+        function updateFormForCategory() {
+            const categories = getSelectedCategories();
+            const isGallery = categories.includes('galri');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (isGallery) {
+                submitBtn.textContent = editingProductId ? 'Mete sesyon an ajou' : 'Pibliye Sesyon Foto a';
+            } else {
+                submitBtn.textContent = editingProductId ? 'Sove modifikasyon' : 'Pibliye Pwodwi a';
+            }
+        }
+
         function setCategoryChecks(categories = []) {
             document.querySelectorAll('input[name="prodCategories"]').forEach(input => {
                 input.checked = categories.includes(input.value);
@@ -549,6 +573,7 @@
             document.getElementById('submitBtn').textContent = 'Pibliye Pwodwi a';
             document.getElementById('cancelEditBtn').classList.add('hidden');
             addColorVariantRow('Nwa');
+            updateFormForCategory();
         }
 
         function editProduct(id) {
@@ -563,7 +588,7 @@
             document.getElementById('prodPriceHTG').value = product.price_htg || '';
             document.getElementById('prodPriceUSD').value = product.price_usd || '';
             document.getElementById('prodCompareUSD').value = product.compare_at_usd || '';
-            document.getElementById('prodStock').value = product.stock_qty || '';
+            document.getElementById('prodStock').value = product.stock_quantity || '';
             document.getElementById('prodGender').value = product.gender || 'unisex';
             document.getElementById('prodType').value = product.product_type || '';
             document.getElementById('prodSizes').value = Array.isArray(product.sizes) ? product.sizes.join(', ') : '';
@@ -581,6 +606,10 @@
             document.getElementById('preorderAdminFields').classList.toggle('active', isProductPreorder(product));
             setCategoryChecks(getProductCategories(product));
 
+            // Update image previews for existing product
+            document.getElementById('imagePreviewGrid').innerHTML = `
+                ${product.image_url ? `<figure><img src="${escapeHtml(product.image_url)}" alt="Aperçu Devan"><figcaption>Devan</figcaption></figure>` : ''}
+                ${product.back_image_url ? `<figure><img src="${escapeHtml(product.back_image_url)}" alt="Aperçu Dèyè"><figcaption>Dèyè</figcaption></figure>` : ''}`;
             document.getElementById('colorVariantList').innerHTML = '';
             const variants = Array.isArray(product.color_variants) ? product.color_variants : [];
             if (variants.length) variants.forEach(variant => addColorVariantRow(variant.color || '', variant.image_url || ''));
@@ -591,6 +620,7 @@
             document.getElementById('submitBtn').textContent = 'Sove modifikasyon';
             document.getElementById('cancelEditBtn').classList.remove('hidden');
             document.getElementById('addProductForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            updateFormForCategory();
         }
 
         function buildProductDescription(colorVariants = []) {
@@ -646,7 +676,7 @@
                 material: document.getElementById('prodMaterial').value.trim(),
                 fit: document.getElementById('prodFit').value.trim(),
                 care: document.getElementById('prodCare').value.trim(),
-                stock_qty: document.getElementById('prodStock').value || null,
+                stock_quantity: document.getElementById('prodStock').value !== '' ? Number(document.getElementById('prodStock').value) : null,
                 compare_at_usd: document.getElementById('prodCompareUSD').value || null,
                 is_latest: document.getElementById('isLatest').checked,
                 is_featured: document.getElementById('isFeatured').checked,
@@ -706,6 +736,9 @@
         document.getElementById('isPreorder').addEventListener('change', (event) => {
             document.getElementById('preorderAdminFields').classList.toggle('active', event.target.checked);
         });
+        document.querySelectorAll('input[name="prodCategories"]').forEach(input => {
+            input.addEventListener('change', updateFormForCategory);
+        });
         document.getElementById('cancelEditBtn').addEventListener('click', resetProductForm);
         addColorVariantRow('Nwa');
 
@@ -719,8 +752,9 @@
         }
 
         // Chaje Done Estatistik ak Pwodwi
-        async function loadAdminData() {
+        async function loadAdminData(filter = '') {
             const supabase = window.supabaseHelpers.supabase;
+            const searchQuery = filter || document.getElementById('adminProductSearch')?.value.trim().toLowerCase();
 
             // Pwodwi
             const { data: products, error: productsError } = await supabase
@@ -739,16 +773,26 @@
             if (orderCountError) console.warn('Erè konte kòmand:', orderCountError.message);
             if (preorderCountError) console.warn('Erè konte pre komand:', preorderCountError.message);
 
+            const outOfStockCount = (products || []).filter(p => isProductOutOfStock(p)).length;
+            const activePreorderCount = (products || []).filter(p => isProductPreorder(p)).length;
             document.getElementById('totalProducts').textContent = products?.length || 0;
             document.getElementById('totalOrders').textContent = (orderCount || 0) + (preorderCount || 0);
+            document.getElementById('outOfStockCount').textContent = outOfStockCount;
+            document.getElementById('preorderCount').textContent = activePreorderCount;
             
             // Similasyon vizit (pou kounye a)
             document.getElementById('liveViews').textContent = Math.floor(Math.random() * 50) + 1;
             
             const list = document.getElementById('productsList');
-            adminProductsCache = products || [];
-            if (products && products.length) {
-                list.innerHTML = products.map(p => `
+            let filteredProducts = products || [];
+            adminProductsCache = filteredProducts;
+
+            if (searchQuery) {
+                filteredProducts = filteredProducts.filter(p => p.name.toLowerCase().includes(searchQuery) || (p.collection && p.collection.toLowerCase().includes(searchQuery)));
+            }
+
+            if (filteredProducts.length) {
+                list.innerHTML = filteredProducts.map(p => `
                     <tr>
                         <td>
                             <div class="prod-cell">
@@ -760,15 +804,16 @@
                             </div>
                         </td>
                         <td>${escapeHtml(getProductCategories(p).map(cat => categoryLabels[cat] || cat).join(', ') || '-')}</td>
+                        <td class="${isProductOutOfStock(p) ? 'server-error' : ''}" style="font-weight: bold;">${p.stock_quantity !== null ? p.stock_quantity : 'N/A'}</td>
                         <td>
                             <div class="price-cell">
                                 <strong>${formatUsd(p.price_usd)}</strong>
                                 <small>${p.price_htg ? `${Number(p.price_htg).toLocaleString('fr-FR')} HTG` : '-'}</small>
                             </div>
                         </td>
-                        <td>
-                            <span class="status-badge ${isProductPreorder(p) ? 'status-preorder' : p.is_available ? 'status-completed' : 'status-offline'}">
-                                ${isProductPreorder(p) ? 'Pre Komand' : p.is_available ? 'An Stock' : 'Pa Disponib'}
+                        <td class="status-cell">
+                            <span class="status-badge ${getProductCategories(p).includes('galri') ? 'status-gallery' : (isProductPreorder(p) ? 'status-preorder' : (isProductOutOfStock(p) ? 'status-offline' : 'status-completed'))}">
+                                ${getProductCategories(p).includes('galri') ? 'GALRI' : (isProductPreorder(p) ? 'PRE-KOMAND' : (isProductOutOfStock(p) ? 'FINI' : 'AN STÒK'))}
                             </span>
                         </td>
                         <td>
@@ -891,6 +936,15 @@
             }
             loadOrders();
         }
+
+        async function markPreorderReady(id, email) {
+            await window.supabaseHelpers.supabase.from('preorders').update({ status: 'ready' }).eq('id', id);
+            if (email) {
+                window.location.href = `mailto:${email}?subject=Pre-komand ZOE DEPT ou pare!&body=Bonjou, pre-komand ou a pare. Nou pral kontakte ou pou finalize livrezon an. Mèsi paske ou chwazi ZOE DEPT.`;
+            }
+            loadOrders(); // Reload orders to update status
+        }
+
 
         document.getElementById('adminLogout').addEventListener('click', async () => {
             const { error } = await window.supabaseHelpers.logoutUser();
