@@ -114,6 +114,14 @@ function productVariants(product) {
             }));
     }
 
+    // Support pour la nouvelle colonne 'colors' (TEXT[])
+    if (Array.isArray(product.colors) && product.colors.length) {
+        return product.colors.map(color => ({
+            color: String(color),
+            image: product.image_url
+        }));
+    }
+
     const description = product.description || '';
     const imageLine = description.match(/Koulè Imaj:\s*([^\n]+)/i);
     if (imageLine) {
@@ -126,7 +134,10 @@ function productVariants(product) {
             .filter(Boolean);
         if (parsedVariants.length) return parsedVariants;
     }
+    return [];
+}
 
+function productSizes(product) {
     if (Array.isArray(product.sizes)) return product.sizes.filter(Boolean);
     if (typeof product.sizes === 'string') {
         return product.sizes.split(',').map(size => size.trim()).filter(Boolean);
