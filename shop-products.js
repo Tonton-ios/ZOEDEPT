@@ -13,6 +13,7 @@ const ZOE_SHOP_CATEGORIES = [
     { slug: 'valiz', label: 'Valiz', href: 'valiz.html' },
     { slug: 'galri', label: 'Galri', href: 'galri.html' },
     { slug: 'zoe-dept', label: 'ZOE DEPT.', href: 'zoe-dept.html' },
+    { slug: 'sak-pase', label: 'SAK PASE? AYITI', href: 'sak-pase.html' },
     { slug: 'bese-triye', label: 'BESE TRIYE', href: 'bese-triye.html' },
     { slug: 'pv-dept', label: 'PV DEPT', href: 'pv-dept.html' }
 ];
