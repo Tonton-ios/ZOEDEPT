@@ -52,7 +52,13 @@ function isGalleryItem(product) {
 }
 
 function isOutOfStock(product) {
-    return product.stock_quantity !== null && typeof product.stock_quantity === 'number' && product.stock_quantity <= 0;
+    // Le produit est en rupture si is_available est faux OU si le stock est à 0
+    if (product.is_available === false) return true;
+    return (
+        product.stock_quantity !== null && 
+        typeof product.stock_quantity === 'number' && 
+        product.stock_quantity <= 0
+    );
 }
 
 function productMetaValue(product, label) {
