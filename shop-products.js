@@ -99,7 +99,8 @@ function htgToUsd(value) {
 }
 
 function cleanDescription(product) {
-    return (product.description || 'Nouvo pyès ZOE DEPT. disponib kounye a.')
+    const desc = product.description || 'Nouvo pyès ZOE DEPT. disponib kounye a.';
+    return desc
         .split('--- Detay Atelye ---')[0]
         .trim();
 }
