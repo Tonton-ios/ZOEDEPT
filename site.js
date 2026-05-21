@@ -51,8 +51,8 @@
                 <strong>ZOE DEPT.</strong>
             </div>
             <div class="footer-socials">
-                <a href="https://instagram.com/zoedept" target="_blank" aria-label="Instagram" class="footer-icon icon-instagram"></a>
-                <a href="https://tiktok.com/@zoedept" target="_blank" aria-label="TikTok" class="footer-icon icon-tiktok"></a>
+                <a href="https://www.instagram.com/zoedepartment?igsh=MWFmanl1cXZsdGQ3eg==" target="_blank" aria-label="Instagram" class="footer-icon icon-instagram"></a>
+                <a href="https://www.tiktok.com/@zoedepartment?_r=1&_t=ZS-96YL40SOGQ8" target="_blank" aria-label="TikTok" class="footer-icon icon-tiktok"></a>
                 <a href="https://wa.me/50932045691?text=Bonjou%20ZOE%20DEPT.,%20mwen%20vle%20kontakte%20nou." target="_blank" aria-label="WhatsApp" class="footer-icon icon-whatsapp"></a>
             </div>
             <div class="footer-legal">
