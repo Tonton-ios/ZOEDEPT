@@ -43,7 +43,43 @@
         overlay.setAttribute('aria-hidden', 'true');
     }
 
+    function renderFooter() {
+        const footer = document.querySelector('.footer');
+        if (!footer) return;
+        footer.innerHTML = `
+            <div class="footer-brand">
+                <strong>ZOE DEPT.</strong>
+            </div>
+            <div class="footer-socials">
+                <a href="https://instagram.com/zoedept" target="_blank" aria-label="Instagram" class="footer-icon icon-instagram"></a>
+                <a href="https://tiktok.com/@zoedept" target="_blank" aria-label="TikTok" class="footer-icon icon-tiktok"></a>
+                <a href="https://wa.me/50932045691?text=Bonjou%20ZOE%20DEPT.,%20mwen%20vle%20kontakte%20nou." target="_blank" aria-label="WhatsApp" class="footer-icon icon-whatsapp"></a>
+            </div>
+            <div class="footer-legal">
+                <span>© 2026 ZOE DEPT, Tout dwa rezève. Sit sa fèt pa URBVEC ATELIER .</span>
+            </div>
+        `;
+    }
+
+    function updateCartBadge() {
+        const badges = document.querySelectorAll('.cart-badge');
+        if (badges.length === 0) return;
+        
+        let cart = [];
+        try {
+            cart = JSON.parse(localStorage.getItem('zoe_cart') || '[]');
+        } catch (e) {}
+        
+        const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+        badges.forEach(badge => {
+            badge.textContent = count;
+        });
+    }
+    window.updateCartBadge = updateCartBadge;
+
     document.addEventListener('DOMContentLoaded', () => {
+        renderFooter();
+        updateCartBadge();
         document.querySelectorAll('.icon-search').forEach(button => {
             button.addEventListener('click', event => {
                 event.preventDefault();

@@ -19,9 +19,8 @@ const ZOE_SHOP_CATEGORIES = [
 
 let allShopProducts = [];
 let currentProductMap = new Map();
-let activeBuyItem = null;
 const USD_RATE = 132;
-const WHATSAPP_BUSINESS_NUMBER = '50937402026'; // Nimewo WhatsApp ekip ZOE DEPT.
+const WHATSAPP_BUSINESS_NUMBER = '50932045691'; // Nimewo WhatsApp ekip ZOE DEPT.
 
 function zoeEscape(value = '') {
     return String(value)
@@ -516,42 +515,38 @@ function closeBuyDrawer() {
     document.getElementById('buyDrawer')?.setAttribute('aria-hidden', 'true');
 }
 
-function itemUnitHTG() {
-    return Number(activeBuyItem?.product?.price_htg || 0);
-}
-
-function orderSubtotalHTG() {
-    return itemUnitHTG() * Number(activeBuyItem?.quantity || 1);
-}
-
 function renderBuyDrawer() {
-    if (!activeBuyItem) return;
-    const { product, size, color, quantity } = activeBuyItem;
-    const total = orderSubtotalHTG();
-    document.getElementById('buyDrawerBody').innerHTML = `
-        <div class="drawer-product" style="display: flex; gap: 1.5rem; align-items: flex-start;">
-            <img src="${zoeEscape(product.image_url)}" alt="${zoeEscape(product.name)}">
-            <div>
-                <h3 style="font-family: serif; margin-bottom: 0.25rem;">${zoeEscape(product.name)}</h3>
-                <p style="font-weight: bold; margin-bottom: 0.5rem;">${zoeEscape(formatHTG(product.price_htg))}</p>
-                <small>Size: ${zoeEscape(size || '-')} | Koulè: ${zoeEscape(color || '-')}</small>
+    const cart = getCart();
+    const body = document.getElementById('buyDrawerBody');
+    if (!body) return;
+
+    if (cart.length === 0) {
+        body.innerHTML = '<p style="text-align:center; padding: 2rem; opacity: 0.5;">Panye ou vid.</p>';
+        document.getElementById('buyDrawerTotal').textContent = '0 GDS';
+        return;
+    }
+
+    body.innerHTML = cart.map((item, index) => `
+        <div class="drawer-product-wrapper" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #eee;">
+            <div class="drawer-product" style="display: flex; gap: 1rem; align-items: flex-start;">
+                <img src="${zoeEscape(item.image_url)}" alt="${zoeEscape(item.name)}" style="width: 70px; height: 90px; object-fit: cover; border-radius: 4px;">
+                <div style="flex: 1;">
+                    <h3 style="font-family: serif; font-size: 1rem; margin: 0 0 0.25rem;">${zoeEscape(item.name)}</h3>
+                    <p style="font-weight: bold; margin: 0 0 0.5rem;">${zoeEscape(formatHTG(item.price_htg))}</p>
+                    <small style="display: block; opacity: 0.6; margin-bottom: 0.5rem;">Size: ${zoeEscape(item.size)} | Koulè: ${zoeEscape(item.color)}</small>
+                    <div class="qty-stepper" style="margin-top: 0; width: 100px; grid-template-columns: 30px 1fr 30px; height: 30px;">
+                        <button type="button" onclick="updateItemQuantity(${index}, -1)" style="min-height: 30px;">−</button>
+                        <span style="font-size: 0.8rem;">${item.quantity}</span>
+                        <button type="button" onclick="updateItemQuantity(${index}, 1)" style="min-height: 30px;">+</button>
+                    </div>
+                </div>
+                <button onclick="removeFromCart(${index})" style="background:none; border:none; cursor:pointer; font-size: 1.2rem; opacity: 0.3;">&times;</button>
             </div>
         </div>
-        <div class="qty-stepper">
-            <button type="button" id="qtyMinus">−</button>
-            <span>${quantity}</span>
-            <button type="button" id="qtyPlus">+</button>
-        </div>
-    `;
+    `).join('');
+
+    const total = orderSubtotalHTG();
     document.getElementById('buyDrawerTotal').textContent = formatHTG(total);
-    document.getElementById('qtyMinus').addEventListener('click', () => {
-        activeBuyItem.quantity = Math.max(1, activeBuyItem.quantity - 1);
-        renderBuyDrawer();
-    });
-    document.getElementById('qtyPlus').addEventListener('click', () => {
-        activeBuyItem.quantity += 1;
-        renderBuyDrawer();
-    });
 }
 
 function ensurePreorderModal() {
@@ -744,7 +739,7 @@ function closeCheckout() {
 }
 
 function openCheckout() {
-    if (!activeBuyItem) return;
+    if (getCart().length === 0) return;
     ensureCheckout();
     closeBuyDrawer();
     window.appliedPromo = null;
@@ -807,18 +802,20 @@ async function applyPromoCode() {
 
 async function submitOrder(event) {
     event.preventDefault();
-    if (!activeBuyItem) return;
-    const { product, size, color, quantity } = activeBuyItem;
-    const item = {
-        product_id: product.id,
-        name: product.name,
-        image_url: product.image_url,
-        size,
-        color,
-        quantity,
-        unit_htg: Number(product.price_htg || 0),
-        unit_usd: Number(product.price_usd || 0)
-    };
+    const cart = getCart();
+    if (cart.length === 0) return;
+
+    const items = cart.map(item => ({
+        product_id: item.id,
+        name: item.name,
+        image_url: item.image_url,
+        size: item.size,
+        color: item.color,
+        quantity: item.quantity,
+        unit_htg: Number(item.price_htg || 0),
+        unit_usd: Number(item.price_usd || 0)
+    }));
+
     const payload = {
         user_id: null,
         customer_email: document.getElementById('checkoutEmail').value.trim(),
@@ -828,7 +825,7 @@ async function submitOrder(event) {
         customer_address: document.getElementById('checkoutAddress').value.trim(),
         customer_country: document.getElementById('checkoutCountry').value,
         payment_method: 'WhatsApp',
-        items: [item],
+        items: items,
         subtotal_htg: orderSubtotalHTG(),
         shipping_htg: checkoutShippingHTG(),
         discount_htg: checkoutDiscountHTG(),
@@ -860,12 +857,14 @@ async function submitOrder(event) {
 
         if (orderError) throw orderError;
 
-        // 2. Dekremente stock la nan baz de done a si se pa yon pre-order
-        if (typeof activeBuyItem.product.stock_quantity === 'number' && !isPreorder(activeBuyItem.product)) {
-            await window.supabaseHelpers.supabase
-                .from('products')
-                .update({ stock_quantity: Math.max(0, activeBuyItem.product.stock_quantity - activeBuyItem.quantity) })
-                .eq('id', activeBuyItem.product.id);
+        // 2. Dekremente stock la si nesesè
+        for (const item of cart) {
+            if (item.stock_quantity !== undefined && item.stock_quantity !== null) {
+                await window.supabaseHelpers.supabase
+                    .from('products')
+                    .update({ stock_quantity: Math.max(0, item.stock_quantity - item.quantity) })
+                    .eq('id', item.id);
+            }
         }
 
         // 3. Mise à jour du compteur promo si nécessaire
@@ -912,6 +911,8 @@ async function submitOrder(event) {
         const waUrl = `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(invoiceText)}`;
         
         localStorage.setItem('zoeLastOrder', JSON.stringify(createdOrder));
+        localStorage.removeItem('zoe_cart'); // Nettoyer le panier après commande réussie
+        if (window.updateCartBadge) window.updateCartBadge();
         
         window.location.assign(waUrl);
 
